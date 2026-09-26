@@ -1,0 +1,190 @@
+{
+  "checked_utc": "2026-09-26T18:03:34.574945+00:00",
+  "kind": "read_only_source_inspection_not_engine_execution",
+  "ghostty_stable_commit": "332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28",
+  "ghostty_development_commit": "6301810a48aaa3426887a4316668f18833a40138",
+  "wezterm_stable_commit": "5046fc225992db6ba2ef8812743fadfdfe4b184a",
+  "sources": [
+    {
+      "source": "https://api.github.com/repos/ghostty-org/ghostty/git/trees/332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28?recursive=1",
+      "sha256": "4beb2f977aa2e2bb86a1b870c14f9c90e2103e885cd85981f98b1995f4b64464",
+      "bytes": 1693079,
+      "local_inspection_name": "ghostty-tree.json"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28/build.zig",
+      "sha256": "2a100b316cffd1eb9bb80e99093542baec12d70d7721b95c4c94ad88a2b7a1fa",
+      "bytes": 11213,
+      "local_inspection_name": "ghostty-build.zig"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28/README.md",
+      "sha256": "aac5ca0698f31b78df5c11fe581a23a0ca276e0050b89d857be94817955739e2",
+      "bytes": 9160,
+      "local_inspection_name": "ghostty-README.md"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/wezterm/wezterm/20240203-110809-5046fc22/term/Cargo.toml",
+      "sha256": "75db0e5a1380453dab6ed6f9b78a99727c01801199e6d7dbabdc472a096037ae",
+      "bytes": 1035,
+      "local_inspection_name": "wezterm-term-Cargo.toml"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/wezterm/wezterm/20240203-110809-5046fc22/Cargo.toml",
+      "sha256": "7228083a9a7f49f349dd600af68f5be19f1fcc508d780670ec2a16be38488d1d",
+      "bytes": 706,
+      "local_inspection_name": "wezterm-root-Cargo.toml"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/wezterm/wezterm/20240203-110809-5046fc22/term/src/lib.rs",
+      "sha256": "ebee7041ff7f72b8f5b829c18f37ea2484e10690d56f1c8ada805113aecaff3c",
+      "bytes": 5199,
+      "local_inspection_name": "wezterm-term-lib.rs"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28/src/build/Config.zig",
+      "sha256": "ecdd60c4152f50d13aa6d00a9dd479a1903ee2f521591b8d3b1fc1325cd216e8",
+      "bytes": 22112,
+      "local_inspection_name": "ghostty-config.zig"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28/src/terminal/Terminal.zig",
+      "sha256": "97a3a1b155a74b4a1ed2c16d33fa89b0364d0a6ed2a3d47b45a3da30f6f50a8d",
+      "bytes": 439968,
+      "local_inspection_name": "ghostty-terminal.zig"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28/include/ghostty/vt.h",
+      "sha256": "8d6903e598553df322f3e0d456ef70855364af0bc05e6036d6c79ee61f26538d",
+      "bytes": 2997,
+      "local_inspection_name": "ghostty-vt.h"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28/src/terminal/c/main.zig",
+      "sha256": "a9f8fc811b909078a1cbe8861fef20bd2ba0016ea970a2c2fd49d98f998eceef",
+      "bytes": 2440,
+      "local_inspection_name": "ghostty-c-main.zig"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/wezterm/wezterm/20240203-110809-5046fc22/term/src/terminal.rs",
+      "sha256": "b3e13adbbd1235c3ac4543fe2c8bfd631a850bc9eb01a791cb44447e45ebc380",
+      "bytes": 5132,
+      "local_inspection_name": "wezterm-terminal.rs"
+    },
+    {
+      "source": "https://crates.io/api/v1/crates/alacritty_terminal",
+      "sha256": "1792d76e44547c8a29e05eba0ebf4fcd3091c32a31a65d96efe733cb5ca0baa0",
+      "bytes": 74561,
+      "local_inspection_name": "alacritty-registry.json"
+    },
+    {
+      "source": "https://ziglang.org/download/index.json",
+      "sha256": "72f0df8da0f04d527be43342cb452aba7f19824175b5130a23cd6e3f1b62efec",
+      "bytes": 76660,
+      "local_inspection_name": "zig-index.json"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28/src/build/main.zig",
+      "sha256": "90b9ce6bfece16a049f151fb77a9036d91b92079492f7e67f3af5684baf5c3c3",
+      "bytes": 1495,
+      "local_inspection_name": "ghostty-build-main.zig"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/wezterm/wezterm/20240203-110809-5046fc22/term/src/terminalstate/performer.rs",
+      "sha256": "8fa1deaeb4610f0a76be95df189fc64300336028cf60e3781f2bd179c547b02a",
+      "bytes": 47790,
+      "local_inspection_name": "wezterm-performer.rs"
+    },
+    {
+      "source": "https://api.github.com/repos/ghostty-org/ghostty/commits/main",
+      "sha256": "f11b7475cec2ebc7e43a3faf481ba0d8e4f90e9c0f6d2ede046b3bde7f3f6b54",
+      "bytes": 5748,
+      "local_inspection_name": "ghostty-main-ref.json"
+    },
+    {
+      "source": "https://api.github.com/repos/wezterm/wezterm/commits/20240203-110809-5046fc22",
+      "sha256": "df9981321e67fe44f08452259bcfd6054bbdb38cb4934ce14a7c347c77424219",
+      "bytes": 15643,
+      "local_inspection_name": "wezterm-stable-ref.json"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/332b2aefc6e72d363aa93ab6ecfc86eeeeb5ed28/src/build/zig.zig",
+      "sha256": "7bee503f3daaf9ac48cc57b2366d2b333e915bf7264f33c72c9b51a4ff77568b",
+      "bytes": 744,
+      "local_inspection_name": "ghostty-build-zig.zig"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/6301810a48aaa3426887a4316668f18833a40138/include/ghostty/vt.h",
+      "sha256": "014813d7dba136ae6faecb515d23e7d7dc675672094174f91e2d84ab2bb55732",
+      "bytes": 6967,
+      "local_inspection_name": "ghostty-dev-vt.h"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/6301810a48aaa3426887a4316668f18833a40138/build.zig.zon",
+      "sha256": "1e62dee14f74bcf146a982c9c84fdb48596ad88159e1b85f31e3597dcaa8869c",
+      "bytes": 5808,
+      "local_inspection_name": "ghostty-dev-build.zig.zon"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/6301810a48aaa3426887a4316668f18833a40138/include/ghostty/vt/terminal.h",
+      "sha256": "955b5b523cb4d3ee2bb1d4ab7aeed2722a50451efdcb7e74a941a8b022ccb207",
+      "bytes": 93950,
+      "local_inspection_name": "ghostty-dev-terminal.h"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/6301810a48aaa3426887a4316668f18833a40138/README.md",
+      "sha256": "5308d2f58b44262eae03c228278edbf8f97dccb04137f169c41b40a73e7e1ec0",
+      "bytes": 10501,
+      "local_inspection_name": "ghostty-dev-README.md"
+    },
+    {
+      "source": "https://raw.githubusercontent.com/ghostty-org/ghostty/v1.3.1/build.zig.zon",
+      "sha256": "991e650ab7d334b9521d53816f528cb269bc92a3514edacb4ce0d73150ad6bbe",
+      "bytes": 5687,
+      "local_inspection_name": "nebulax-ghostty-build.zig.zon"
+    },
+    {
+      "source": "https://api.github.com/repos/ghostty-org/ghostty/git/ref/tags/v1.3.1",
+      "sha256": "256a9fd20e7d20f0d8b13b541343a66f065d9c28ee5848129fe4a7697ef2efaf",
+      "bytes": 372,
+      "local_inspection_name": "nebulax-ghostty-tag.json"
+    },
+    {
+      "source": "https://api.github.com/repos/ghostty-org/ghostty/git/tags/22efb0be2bbea73e5339f5426fa3b20edabcaa11",
+      "sha256": "13d318938410b4b8c80836c7b61d89869eefa5b28df0357d75a88b492b3bb340",
+      "bytes": 2625,
+      "local_inspection_name": "nebulax-ghostty-tag-object.json"
+    },
+    {
+      "source": "https://api.github.com/repos/wezterm/wezterm/releases/latest",
+      "sha256": "39266ca1d93ec170e4b7e39d5db35f772e7dc5a53bbecf5fc42efd6f50f02278",
+      "bytes": 89188,
+      "local_inspection_name": "nebulax-wezterm-latest.json"
+    },
+    {
+      "source": "crates.io package alacritty_terminal-0.26.0/src/term/mod.rs",
+      "sha256": "94be91817bec509ddb229fc83093fcbc044bd0929fb8758b236c939cb21df647",
+      "bytes": 112720
+    },
+    {
+      "source": "crates.io package alacritty_terminal-0.26.0/src/term/cell.rs",
+      "sha256": "b3b0e1495c492cbc7970fdd470ee84d7321ebc00629db49429367eaef6cabdd2",
+      "bytes": 9609
+    },
+    {
+      "source": "crates.io package unicode-width-0.2.2/src/lib.rs",
+      "sha256": "be8917e1a821806c0ce7a392564c72731a5f7d02155429a37b08571ad246a0bf",
+      "bytes": 14583
+    }
+  ],
+  "unavailable": [
+    {
+      "source": "https://crates.io/api/v1/crates/wezterm-term",
+      "result": "HTTP 404 from crates.io on the check date; do not infer permanent package availability"
+    },
+    {
+      "source": "https://api.github.com/repos/ghostty-org/ghostty/releases/latest",
+      "result": "HTTP 404; used official download page and stable tag instead"
+    }
+  ]
+}

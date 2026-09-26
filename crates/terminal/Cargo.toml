@@ -1,0 +1,12 @@
+[package]
+name = "nebulax-terminal"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license = "MIT AND Unicode-3.0"
+repository.workspace = true
+publish = false
+description = "Owned, bounded terminal-state research slice"
+
+[lints]
+workspace = true

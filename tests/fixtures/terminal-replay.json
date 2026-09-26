@@ -1,0 +1,848 @@
+{
+  "schema_version": 1,
+  "fixtures": [
+    {
+      "id": "ascii-cursor-erase",
+      "requirement": "Cursor-left and erase-to-end preserve preceding text.",
+      "columns": 8,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "abcdef\u001b[3D\u001b[KZ"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "abcZ",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          4
+        ],
+        "wrap_pending": false,
+        "cells": []
+      }
+    },
+    {
+      "id": "split-utf8",
+      "requirement": "UTF-8 decoding preserves an accented scalar and a two-cell CJK character.",
+      "columns": 8,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "é界!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "é界!",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          4
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 1,
+            "text": "界",
+            "flags": 32
+          },
+          {
+            "line": 0,
+            "column": 2,
+            "text": " ",
+            "flags": 64
+          }
+        ]
+      }
+    },
+    {
+      "id": "combining-across-feeds",
+      "requirement": "A combining mark in a later feed extends the prior cell without advancing the cursor.",
+      "columns": 8,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "e"
+        },
+        {
+          "op": "feed",
+          "text": "́!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "é!",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          2
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": "é",
+            "flags": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "wide-at-right-edge",
+      "requirement": "A wide character at the last column wraps with a continuation cell.",
+      "columns": 5,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "abcd界!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "abcd",
+          "界!",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          1,
+          3
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 1,
+            "column": 0,
+            "text": "界",
+            "flags": 32
+          },
+          {
+            "line": 1,
+            "column": 1,
+            "text": " ",
+            "flags": 64
+          }
+        ]
+      }
+    },
+    {
+      "id": "resize-soft-line",
+      "requirement": "Narrowing reflows a logical line and preserves the cursor.",
+      "columns": 8,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "abcdef"
+        },
+        {
+          "op": "resize",
+          "columns": 4,
+          "lines": 3
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "abcd",
+          "ef",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          1,
+          2
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 3,
+            "text": "d",
+            "flags": 16
+          }
+        ]
+      },
+      "known_gap": "P0-06 viewport policy question, not a demonstrated VT defect: text is preserved in history but reflow keeps the cursor on the first visible row instead of using available rows below. The expected viewport is a provisional UX preference.",
+      "known_gap_state_sha256": "14e6f1d46d8d7dfa8af2a72be43d0b1f5b174a1e67e515b916b466443a120853"
+    },
+    {
+      "id": "resize-hard-lines",
+      "requirement": "Narrowing preserves explicit hard line boundaries.",
+      "columns": 8,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "ab\r\ncd"
+        },
+        {
+          "op": "resize",
+          "columns": 4,
+          "lines": 3
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "ab",
+          "cd",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          1,
+          2
+        ],
+        "wrap_pending": false,
+        "cells": []
+      }
+    },
+    {
+      "id": "scrollback-order",
+      "requirement": "Scrolling preserves ordered history separately from the active screen.",
+      "columns": 8,
+      "lines": 2,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "one\r\ntwo\r\nthree\r\nfour"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "three",
+          "four"
+        ],
+        "history_text": [
+          "one",
+          "two"
+        ],
+        "cursor": [
+          1,
+          4
+        ],
+        "wrap_pending": false,
+        "cells": []
+      }
+    },
+    {
+      "id": "alternate-screen-restore",
+      "requirement": "Leaving alternate screen restores primary text and saved cursor.",
+      "columns": 8,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "main"
+        },
+        {
+          "op": "feed",
+          "text": "\u001b[?1049h"
+        },
+        {
+          "op": "feed",
+          "text": "temp"
+        },
+        {
+          "op": "feed",
+          "text": "\u001b[?1049l"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "main",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          4
+        ],
+        "wrap_pending": false,
+        "cells": []
+      }
+    },
+    {
+      "id": "emoji-zwj-cluster",
+      "requirement": "Nebulax requires woman-technologist to occupy one two-cell grapheme; the following ASCII character starts at column 2.",
+      "columns": 12,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "👩"
+        },
+        {
+          "op": "feed",
+          "text": "‍💻!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "👩‍💻!",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          3
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": "👩‍💻",
+            "flags": 32
+          },
+          {
+            "line": 0,
+            "column": 1,
+            "text": " ",
+            "flags": 64
+          },
+          {
+            "line": 0,
+            "column": 2,
+            "text": "!",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "P0-06 required behavior gap: the engine stores woman+ZWJ and laptop as separate wide cells, advancing four columns instead of two. A rendering-only change cannot correct cursor state.",
+      "known_gap_state_sha256": "37345d51a45e5f7391565374393ee37dbfb116c7382cb281bdb793e34b03bdfc"
+    },
+    {
+      "id": "emoji-skin-tone",
+      "requirement": "Under the proposed grapheme policy, thumbs-up plus skin tone is one two-cell cluster even when the modifier arrives later.",
+      "columns": 12,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "👍"
+        },
+        {
+          "op": "feed",
+          "text": "🏽!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "👍🏽!",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          3
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": "👍🏽",
+            "flags": 32
+          },
+          {
+            "line": 0,
+            "column": 1,
+            "text": " ",
+            "flags": 64
+          },
+          {
+            "line": 0,
+            "column": 2,
+            "text": "!",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "Required grapheme gap: base and skin-tone modifier occupy separate wide cells, advancing four columns rather than two.",
+      "known_gap_state_sha256": "5e2350974088656cae1a8c356ef15061f1b45f377cb8165aaae4a239ddea2ed1"
+    },
+    {
+      "id": "emoji-regional-flag",
+      "requirement": "A US regional-indicator pair is stored as one two-cell grapheme, not two independently editable scalar cells.",
+      "columns": 12,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "🇺"
+        },
+        {
+          "op": "feed",
+          "text": "🇸!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "🇺🇸!",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          3
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": "🇺🇸",
+            "flags": 32
+          },
+          {
+            "line": 0,
+            "column": 1,
+            "text": " ",
+            "flags": 64
+          },
+          {
+            "line": 0,
+            "column": 2,
+            "text": "!",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "Required grapheme ownership gap: total width is two but regional indicators are stored as independently editable narrow cells, not one cluster.",
+      "known_gap_state_sha256": "a1ed484d119f4c77c50197f0372852198373916ba24388493b27125b460a3a0a"
+    },
+    {
+      "id": "emoji-vs16-widen",
+      "requirement": "Heart followed by VS16 becomes a two-cell emoji, including when the selector arrives later.",
+      "columns": 12,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "❤"
+        },
+        {
+          "op": "feed",
+          "text": "️!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "❤️!",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          3
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": "❤️",
+            "flags": 32
+          },
+          {
+            "line": 0,
+            "column": 1,
+            "text": " ",
+            "flags": 64
+          },
+          {
+            "line": 0,
+            "column": 2,
+            "text": "!",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "Required emoji-presentation gap under the proposed width policy: VS16 attaches without widening the prior heart cell from one to two columns.",
+      "known_gap_state_sha256": "50a217f949d887924bfbffb60be581be8c680cc8a5307c4dfed2c4967d26e091"
+    },
+    {
+      "id": "text-vs15-narrow",
+      "requirement": "Watch followed by VS15 uses the proposed one-cell text-presentation policy; this is an explicit width policy, not a Unicode segmentation mandate.",
+      "columns": 12,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "⌚"
+        },
+        {
+          "op": "feed",
+          "text": "︎!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "⌚︎!",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          2
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": "⌚︎",
+            "flags": 0
+          },
+          {
+            "line": 0,
+            "column": 1,
+            "text": "!",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "Provisional width-policy difference: the proposed text-presentation policy narrows watch+VS15 to one cell; the engine retains two. This is not a Unicode segmentation violation by itself.",
+      "known_gap_state_sha256": "26d179233e54fe7110c5d9e4702f20f029c1d0306dd735955098f332159f5fda"
+    },
+    {
+      "id": "emoji-keycap",
+      "requirement": "A fully-qualified keycap sequence is one two-cell grapheme under the proposed emoji-width policy.",
+      "columns": 12,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "1"
+        },
+        {
+          "op": "feed",
+          "text": "️"
+        },
+        {
+          "op": "feed",
+          "text": "⃣!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "1️⃣!",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          3
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": "1️⃣",
+            "flags": 32
+          },
+          {
+            "line": 0,
+            "column": 1,
+            "text": " ",
+            "flags": 64
+          },
+          {
+            "line": 0,
+            "column": 2,
+            "text": "!",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "Required emoji-width gap: the keycap sequence is attached to one narrow cell instead of occupying a two-cell grapheme.",
+      "known_gap_state_sha256": "442749b12c20962c80310852b791a9d44152df87e5e3c2394ea52be8250620f7"
+    },
+    {
+      "id": "combining-backspace-erase",
+      "requirement": "BS moves one cell, then ECH clears both the base and its attached combining mark.",
+      "columns": 12,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "é"
+        },
+        {
+          "op": "feed",
+          "text": "\b\u001b[X"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          0
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": " ",
+            "flags": 0
+          }
+        ]
+      }
+    },
+    {
+      "id": "emoji-backspace-erase-tail",
+      "requirement": "After a two-cell emoji and ASCII suffix, BS plus EL removes only the suffix and keeps the intact cluster.",
+      "columns": 12,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "👩‍💻!"
+        },
+        {
+          "op": "feed",
+          "text": "\b\u001b[K"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "👩‍💻",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          2
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": "👩‍💻",
+            "flags": 32
+          },
+          {
+            "line": 0,
+            "column": 1,
+            "text": " ",
+            "flags": 64
+          },
+          {
+            "line": 0,
+            "column": 2,
+            "text": " ",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "Required grapheme gap propagates into editing: removing the ASCII suffix preserves separate wide component cells and leaves the cursor at column four rather than two.",
+      "known_gap_state_sha256": "0dcdcfb6337a2c52e755522845da9210ff443dad149e761f02f44fbee5eab83f"
+    },
+    {
+      "id": "emoji-erase-two-cells",
+      "requirement": "CR plus ECH(2) clears a complete two-cell ZWJ cluster; no component may remain at a later column.",
+      "columns": 12,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "👩‍💻"
+        },
+        {
+          "op": "feed",
+          "text": "\r\u001b[2X"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          0
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": " ",
+            "flags": 0
+          },
+          {
+            "line": 0,
+            "column": 1,
+            "text": " ",
+            "flags": 0
+          },
+          {
+            "line": 0,
+            "column": 2,
+            "text": " ",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "Required grapheme ownership gap propagates into ECH: clearing two cells removes the woman but leaves the laptop component at column two.",
+      "known_gap_state_sha256": "dbbbbcedf11ac72e8d3f5889771bef668f5aabaf63174519d87674c51ba8cbb5"
+    },
+    {
+      "id": "emoji-right-edge",
+      "requirement": "A two-cell ZWJ grapheme fits exactly after three ASCII cells in a five-column row; only the suffix wraps.",
+      "columns": 5,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "abc👩"
+        },
+        {
+          "op": "feed",
+          "text": "‍💻!"
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "abc👩‍💻",
+          "!",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          1,
+          1
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 3,
+            "text": "👩‍💻",
+            "flags": 32
+          },
+          {
+            "line": 0,
+            "column": 4,
+            "text": " ",
+            "flags": 80
+          },
+          {
+            "line": 1,
+            "column": 0,
+            "text": "!",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "Required grapheme wrapping gap: the laptop component wraps separately from woman+ZWJ although the complete two-cell cluster should fit at the right edge.",
+      "known_gap_state_sha256": "326b1ad98b632d42624fddc6901847e547547af700aeec213e22b90d8c82b088"
+    },
+    {
+      "id": "emoji-resize-narrow",
+      "requirement": "A two-cell ZWJ grapheme plus ASCII fits in four columns after resize; components stay attached.",
+      "columns": 8,
+      "lines": 3,
+      "history_limit": 16,
+      "operations": [
+        {
+          "op": "feed",
+          "text": "👩‍💻!"
+        },
+        {
+          "op": "resize",
+          "columns": 4,
+          "lines": 3
+        }
+      ],
+      "expected": {
+        "visible_text": [
+          "👩‍💻!",
+          "",
+          ""
+        ],
+        "history_text": [],
+        "cursor": [
+          0,
+          3
+        ],
+        "wrap_pending": false,
+        "cells": [
+          {
+            "line": 0,
+            "column": 0,
+            "text": "👩‍💻",
+            "flags": 32
+          },
+          {
+            "line": 0,
+            "column": 1,
+            "text": " ",
+            "flags": 64
+          },
+          {
+            "line": 0,
+            "column": 2,
+            "text": "!",
+            "flags": 0
+          }
+        ]
+      },
+      "known_gap": "Required grapheme width gap interacts with the existing viewport policy: a cluster plus suffix that should fit in four columns instead reflows into history.",
+      "known_gap_state_sha256": "ec3e8a3aa841c7f46148dd26d5d3c6d63009e3c71c8a53663156104dac71d724"
+    }
+  ]
+}

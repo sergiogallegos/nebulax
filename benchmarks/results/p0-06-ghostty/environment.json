@@ -1,0 +1,14 @@
+{
+  "adapter_sha256": "957efd0aa723d16c110ae1669499eb341899c182d23e9072f34a1966944b9c59",
+  "architecture": "arm64",
+  "exit_code": 0,
+  "finished_utc": "2026-09-26T18:27:14.787081+00:00",
+  "git_commit": "67a72375d5c8eb50f4727c59c182129a4c7dc27e",
+  "git_dirty": true,
+  "kernel": "27.0.0",
+  "os": "Darwin",
+  "python": "3.14.7",
+  "record_differences": false,
+  "sources_unchanged_during_run": true,
+  "started_utc": "2026-09-26T18:27:14.648330+00:00"
+}

@@ -1,0 +1,7 @@
+{
+  "experiments/ghostty-reference/adapter.c": "ee6d99164abb1e4921050154f5e2bb4138efae70b1ac26f924c61f42597f2932",
+  "experiments/ghostty-reference/build.py": "33cc8a2ba664d73d438fc2a1ac6e265e346fb3c9ae09100f5379e1aaf0472350",
+  "experiments/ghostty-reference/replay.py": "c81c55393f27a2f2d5904e969784c33c764f05dfdec5a8e31d9b8ec6af81559f",
+  "experiments/ghostty-reference/test_replay.py": "a990193a51db4f3270a52f24323890ca61fe4bb1b487d6aa15cc634016d910c8",
+  "tests/fixtures/terminal-replay.json": "fbd51e872b816e067e3a5bee4fae9a84c11b502b5d25ff59ef843971b2f5231c"
+}

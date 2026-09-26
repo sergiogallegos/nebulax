@@ -1,0 +1,245 @@
+{
+  "adapter_command": [
+    "xcrun",
+    "clang",
+    "-std=c11",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-O1",
+    "-g",
+    "-I",
+    "target/ghostty-reference/source/include",
+    "experiments/ghostty-reference/adapter.c",
+    "target/ghostty-reference/install/lib/libghostty-vt.a",
+    "-o",
+    "target/ghostty-reference/adapter"
+  ],
+  "adapter_sha256": "957efd0aa723d16c110ae1669499eb341899c182d23e9072f34a1966944b9c59",
+  "adapter_source_sha256": "ee6d99164abb1e4921050154f5e2bb4138efae70b1ac26f924c61f42597f2932",
+  "archive_sha256": "9e3653be4beef36a408d64f6ad0b8abfacc2ee32ffe584f4c3d3ed20b2a5c487",
+  "archive_url": "https://codeload.github.com/ghostty-org/ghostty/tar.gz/6301810a48aaa3426887a4316668f18833a40138",
+  "build_script_sha256": "33cc8a2ba664d73d438fc2a1ac6e265e346fb3c9ae09100f5379e1aaf0472350",
+  "dependencies": {
+    "manifest_sha256": {
+      "build.zig.zon": "1e62dee14f74bcf146a982c9c84fdb48596ad88159e1b85f31e3597dcaa8869c",
+      "cache/aro-0.0.0-JSD1Qk6lNgDdcDV4Vh7Sfy-34m2TluIVOdPzMmj_0BjX.tar.gz/build.zig.zon": "6ba52af7356fb2be7bd1b4735a1e0b8d0d622771cedaa5ea0feb1955e5997940",
+      "cache/translate_c-0.0.0-Q_BUWhVNBwDOEcIqub4VFPJPB6D9dgwzUMHTX5KWr8Xr.tar.gz/build.zig.zon": "02681afcc66f98a61598d5281273d705412988b50195dcceb3fc0e1bf679412b",
+      "cache/uucode-0.2.0-ZZjBPuuFVgC8YZ8eld4fOKsZANLIhTFMzULQxhkLi1C7.tar.gz/build.zig.zon": "cd89284dfeb723b88c8cc4c900c04f37bf0247e4f5acf4d6dd18350be7dcee4e",
+      "example/c-vt-build-info/build.zig.zon": "b1e7ceef31ca46d7ceab94b4288d936f7b31f4730e84fe06afc246a9c176f546",
+      "example/c-vt-color-scheme/build.zig.zon": "5a02e0aec21a32f8946fdbf11fe047db62278cf2df9ee70a331b37782fc8d290",
+      "example/c-vt-colors/build.zig.zon": "94aadc3985ea89e1f9a80e58d5e6e7434a22cf7787915717cbe891608ab7c082",
+      "example/c-vt-compression/build.zig.zon": "1225c6c38eebe445a505cb199bf7b6b37b371de4ff456547b5fb4edcd6616440",
+      "example/c-vt-effects/build.zig.zon": "5476e9ad983c8ba5b87d7cb275872beeb466d3c7b88df868fce6d381bb7f6c03",
+      "example/c-vt-encode-focus/build.zig.zon": "a632c2dcd85580f774e4cec086b1cd761db21ecf3c23ae54a11db0608cf5afb4",
+      "example/c-vt-encode-key/build.zig.zon": "d6a2d8a8d022ce0c651fbc4bcb2922b97e329a7dcc5b0ee53b143b8c50406281",
+      "example/c-vt-encode-mouse/build.zig.zon": "2732ceaa36b694b3980434730e65c55426d07bfb94a2956f80ff0f56137fb789",
+      "example/c-vt-formatter/build.zig.zon": "ab99e60c15760147ff557908c32c0fafc2cae00cf6a167a77b887563af5dbd0e",
+      "example/c-vt-grid-ref-tracked/build.zig.zon": "39c69f57b23aaf66a4a2eeb60a2da80838190f27b7246cb5e6939cbca9108b0d",
+      "example/c-vt-grid-traverse/build.zig.zon": "2c37a56949035d8e8d64a74205da2db6fc992298c30f18042cd5cdd7f71ca7ef",
+      "example/c-vt-kitty-graphics/build.zig.zon": "b1075ae1c7cb418360ba3fa8bb52ae2066a9192094e3354aedba5994f2568ce1",
+      "example/c-vt-modes/build.zig.zon": "474cc1fb1257e0719c5abe545ab649a63807a17f545bf49261ecba62938a6d6a",
+      "example/c-vt-paste/build.zig.zon": "c7c30eb3e4f8de5cafaa076aa84e1be242e9347a0697764f5c747e5ef4d15d7a",
+      "example/c-vt-render/build.zig.zon": "6fd38fa025fc38b55197e694fb1ce244a30281e2db2956b4988cd2b74b1d3df4",
+      "example/c-vt-search/build.zig.zon": "f913da39d91f2a0bdc2f06f83051dfe3ae1993b4547611abbdb86ecf7c993450",
+      "example/c-vt-selection-gesture/build.zig.zon": "3c6c81438d0e27df1e69e0237ef52c6a6fef1031771fcad785631a19761eb231",
+      "example/c-vt-selection/build.zig.zon": "ca1658b8cf9a9774739abf3dc7fe89d34c256b794bc016c7cce60c157846b215",
+      "example/c-vt-sgr/build.zig.zon": "780a702b8bd1d82c62cbf5082e8ba1ebaf1e4230edfd4434dd8f35471ff6e767",
+      "example/c-vt-size-report/build.zig.zon": "5e56bbf0d53522cacfc6fecf4893d9fde9a12c736c7a77608371849990ac5051",
+      "example/c-vt-snapshot/build.zig.zon": "df6a583bf867ddd58c92a79cc928eba4011338dd50136c889c6225fe34683475",
+      "example/c-vt-static/build.zig.zon": "9237cfadabaac69bd4d2fbd5d701eec55166cf60cd7fe0469cf61b327f226683",
+      "example/c-vt-stream/build.zig.zon": "d34bf15cb82aabb926bdb931f03e66ae91e367227d3436911e0aeff677a9d99c",
+      "example/c-vt/build.zig.zon": "d6a2d8a8d022ce0c651fbc4bcb2922b97e329a7dcc5b0ee53b143b8c50406281",
+      "example/cpp-vt-stream/build.zig.zon": "1ee7df424394ccc7de6bff031a5521efc039bb3545f2625ff4195e1e8775a35b",
+      "example/zig-formatter/build.zig.zon": "b5121152e62a45d946d9c8991ebb7d58b9677909148f00b3c0b4265c6e6577d6",
+      "example/zig-vt-stream/build.zig.zon": "3c3e8f7130f5dc574a25d15825aca338c292af5756e7727bbe1bc962a72fb1bf",
+      "example/zig-vt/build.zig.zon": "954079c8e6486f322e00519f233112969ef72b4730bd027e3b993ec7a79d4368",
+      "pkg/afl++/build.zig.zon": "72054806bf2d77e23f6060d4fc18807a9ec2d1d5aa0dbe37cc139eed8e568181",
+      "pkg/android-ndk/build.zig.zon": "5ffc22cbee45082cb8c14976dd5c6538530d6c28cd24014b9f426c6ccc3e70c0",
+      "pkg/apple-sdk/build.zig.zon": "473c60330a7a4269a4a74575afcba2eb7fbb20592507eb7033e58629c89ab812",
+      "pkg/breakpad/build.zig.zon": "ea0f0b84ffb8e90a233fa996b8d424da4351b2dd00e3508a80bfeef6c7510c46",
+      "pkg/dcimgui/build.zig.zon": "056cece46567b865aa194cfb09fe3d0c07ed7ab52b290e39da84e9f1d30aa5a0",
+      "pkg/fontconfig/build.zig.zon": "4acdc87a0cf99859fd8bc8a1331ad74afe1a7abb4c8009de85045af1e0d93b59",
+      "pkg/freetype/build.zig.zon": "46ce4eb4a795e07ac2b89fd2a648fa23e651aedf940e28c9c4e57f9e0afce325",
+      "pkg/glslang/build.zig.zon": "e96bca94611b932cb2106d2e4931d945688137049e11e052e36745cbab74ff65",
+      "pkg/gtk4-layer-shell/build.zig.zon": "4266aea96d971139a5582137eaf791a02fb752d06b1eb10d6f08b4e4536b16bb",
+      "pkg/harfbuzz/build.zig.zon": "44a91d0e5b1dde44f39bd5b76ce19ec2edb82160cf4a889f1a6d378c990274a8",
+      "pkg/highway/build.zig.zon": "57103e0424e9ca660756bb2cd0475ca3057e61e7f2d4038aba2a90eae890b932",
+      "pkg/libintl/build.zig.zon": "63c216f3e46c96a41f791f59ab86194acf270d758aec4cc2248e8d604f7e1084",
+      "pkg/libpng/build.zig.zon": "4546494e09ee5459dca7caf363521545d96aaff65d07d84ab22b74ee80a9e4de",
+      "pkg/libxml2/build.zig.zon": "2d9ad897f7942d2ba4079a4d9e724afdb9fb4c73740deed3e78edd3c96cd7703",
+      "pkg/macos/build.zig.zon": "d9d9f1c74b7ddfdd40a4dfa1cf797e95b1e994bb1d21886d9e4535c03ddf5905",
+      "pkg/oniguruma/build.zig.zon": "bc851cd6de7c55484822ee8eb45651885717940bc66c5d1a7a3150f0803f91af",
+      "pkg/opengl/build.zig.zon": "cdbe7f09a1b84e8af5913da6d0c1313f4ea21e8a6bf1f3cd73149d5c60a98991",
+      "pkg/sentry/build.zig.zon": "b886bca5ec8f6cf6bfcc708d73d2916e09b4cf87f9fcc11c67b40693d522707a",
+      "pkg/simdutf/build.zig.zon": "686d11ef1912a877be38cfe3fbf4b1d52c523c3f84c131070b82b142bac45266",
+      "pkg/spirv-cross/build.zig.zon": "d621b343a61d048b9bcdec6c2d55f67adbd769af8056574d56d105f8d1efe97c",
+      "pkg/translate-c/build.zig.zon": "3df27828d8726d6438adb5ba642f39cc8054f7bb9af23e298ee154db37ef8414",
+      "pkg/wuffs/build.zig.zon": "fc90571cbef7acefb618bfef0cf9e301d8609ecfd229f17cfce8a935be6efa28",
+      "pkg/zlib/build.zig.zon": "ec984b740c5bc72bdb6e4afe45130bd3fe1d5a83eada1c36ece319b48883b69b",
+      "test/fuzz-libghostty/build.zig.zon": "3d12ff21a71d11a5299917dc6b378d39d5332be76f76a0ff961002c3c19dd003",
+      "zig-pkg/aro-0.0.0-JSD1Qk6lNgDdcDV4Vh7Sfy-34m2TluIVOdPzMmj_0BjX/build.zig.zon": "6ba52af7356fb2be7bd1b4735a1e0b8d0d622771cedaa5ea0feb1955e5997940",
+      "zig-pkg/translate_c-0.0.0-Q_BUWhVNBwDOEcIqub4VFPJPB6D9dgwzUMHTX5KWr8Xr/build.zig.zon": "02681afcc66f98a61598d5281273d705412988b50195dcceb3fc0e1bf679412b",
+      "zig-pkg/uucode-0.2.0-ZZjBPuuFVgC8YZ8eld4fOKsZANLIhTFMzULQxhkLi1C7/build.zig.zon": "cd89284dfeb723b88c8cc4c900c04f37bf0247e4f5acf4d6dd18350be7dcee4e"
+    },
+    "packages": [
+      {
+        "archive_sha256": "afedfc21da5486fe7124a8de8cf496f912dafb8de743c9dd921981d0847481e9",
+        "bytes": 1575997,
+        "cache_archive": "N-V-__8AAB0eQwD-0MdOEBmz7intriBReIsIDNlukNVoNu6o.tar.gz",
+        "license_file_sha256": {
+          "LICENSE": "845efc77857d485d91fb3e0b884aaa929368c717ae8186b66fe1ed2495753243",
+          "contrib/dotzlib/LICENSE_1_0.txt": "36266a8fd073568394cb81cdb2b124f7fdae2c64c1a7ed09db34b4d22efa2951"
+        },
+        "sources": [
+          {
+            "manifest": "pkg/zlib/build.zig.zon",
+            "url": "https://deps.files.ghostty.org/zlib-1220fed0c74e1019b3ee29edae2051788b080cd96e90d56836eea857b0b966742efb.tar.gz",
+            "zig_package_hash": "N-V-__8AAB0eQwD-0MdOEBmz7intriBReIsIDNlukNVoNu6o"
+          }
+        ]
+      },
+      {
+        "archive_sha256": "47f217a26e815226bc045409727d3d78af7aad9bd7a3f53cfa48fd085575e70b",
+        "bytes": 3521,
+        "cache_archive": "N-V-__8AADYiAAB_80AWnH1AxXC0tql9thT-R-DYO1gBqTLc.tar.gz",
+        "license_file_sha256": {
+          "LICENSE": "6a1ee543e5282cd9061881edf462e6fdab181f328da71fc2c9a6950a80e94d01"
+        },
+        "sources": [
+          {
+            "manifest": "pkg/wuffs/build.zig.zon",
+            "url": "https://deps.files.ghostty.org/pixels-12207ff340169c7d40c570b4b6a97db614fe47e0d83b5801a932dcd44917424c8806.tar.gz",
+            "zig_package_hash": "N-V-__8AADYiAAB_80AWnH1AxXC0tql9thT-R-DYO1gBqTLc"
+          }
+        ]
+      },
+      {
+        "archive_sha256": "6367e3058e4ea1a6284d1d47677ff9f1905ce2fe0f5aad0a9611db602ce617b5",
+        "bytes": 70039,
+        "cache_archive": "N-V-__8AAEFmBABuDGOKxAI6VMg41b9euMZ-z7HS9EcUdaor.tar.gz",
+        "license_file_sha256": {},
+        "sources": [
+          {
+            "manifest": "build.zig.zon",
+            "url": "https://deps.files.ghostty.org/ghostty-themes-release-20260831-151010-752a9c0.tgz",
+            "zig_package_hash": "N-V-__8AAEFmBABuDGOKxAI6VMg41b9euMZ-z7HS9EcUdaor"
+          }
+        ]
+      },
+      {
+        "archive_sha256": "cf0f68a4275e59282383f46289da017166ea4cbbced04ad2af1b79f3eede3cc2",
+        "bytes": 3554009,
+        "cache_archive": "N-V-__8AAGmZhABbsPJLfbqrh6JTHsXhY6qCaLAQyx25e0XE.tar.gz",
+        "license_file_sha256": {
+          "LICENSE": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1",
+          "LICENSE-BSD3": "d25e82e26acd42ca3ccc9993622631163425b869b9e16284226d534cff6470f2",
+          "debian/copyright": "6e4ecf1cae052b678ea3178dd4b3652d581ee66a82d58db8800dd7d80dd6de76"
+        },
+        "sources": [
+          {
+            "manifest": "pkg/highway/build.zig.zon",
+            "url": "https://deps.files.ghostty.org/highway-66486a10623fa0d72fe91260f96c892e41aceb06.tar.gz",
+            "zig_package_hash": "N-V-__8AAGmZhABbsPJLfbqrh6JTHsXhY6qCaLAQyx25e0XE"
+          }
+        ]
+      },
+      {
+        "archive_sha256": "17877d346f7988651d6c62e45b2e3b05c86809a6442c5e34612374b2a9719a1c",
+        "bytes": 771698,
+        "cache_archive": "N-V-__8AAP5JWgCGP_AD0teWpa4krRvE9VPZzvviGdbmN4jI.tar.gz",
+        "license_file_sha256": {
+          "LICENSE": "f8ac2c75e7f629a87565c80d61ff9fe5aa15cdea0bda997d52a4dc13fdbd19cb",
+          "LICENSE-APACHE": "0d542e0c8804e39aa7f37eb00da5a762149dc682d7829451287e11b938e94594",
+          "LICENSE-MIT": "bb811a4b485eac3caeb8bdc58bbafb355fbcb6116010a7ea9179e5c70b0bc878"
+        },
+        "sources": [
+          {
+            "manifest": "pkg/wuffs/build.zig.zon",
+            "url": "https://deps.files.ghostty.org/wuffs-7411f488fe2e2c205c3d3b3d28638b7356522930.tar.gz",
+            "zig_package_hash": "N-V-__8AAP5JWgCGP_AD0teWpa4krRvE9VPZzvviGdbmN4jI"
+          }
+        ]
+      },
+      {
+        "archive_sha256": "563ebdb54ec3a18d475e47cc362b61ef1f5d6b350134565c7cfe304158901d14",
+        "bytes": 457609,
+        "cache_archive": "aro-0.0.0-JSD1Qk6lNgDdcDV4Vh7Sfy-34m2TluIVOdPzMmj_0BjX.tar.gz",
+        "license_file_sha256": {
+          "LICENSE": "0dd70fe17c4cffeba2c47f45af831acf5b83a063d2f561e4495740c162b663ac",
+          "LICENSE-UNICODE": "361d7912957842f2ce61c774b14afba41ae91df84882982e6f7e749e01c07c91"
+        },
+        "sources": [
+          {
+            "manifest": "zig-pkg/translate_c-0.0.0-Q_BUWhVNBwDOEcIqub4VFPJPB6D9dgwzUMHTX5KWr8Xr/build.zig.zon",
+            "url": "https://github.com/vancluever/arocc/archive/f97cdfc3779aec4b242299e2fc9a1c828c3547c6.tar.gz",
+            "zig_package_hash": "aro-0.0.0-JSD1Qk6lNgDdcDV4Vh7Sfy-34m2TluIVOdPzMmj_0BjX"
+          },
+          {
+            "manifest": "cache/translate_c-0.0.0-Q_BUWhVNBwDOEcIqub4VFPJPB6D9dgwzUMHTX5KWr8Xr.tar.gz/build.zig.zon",
+            "url": "https://github.com/vancluever/arocc/archive/f97cdfc3779aec4b242299e2fc9a1c828c3547c6.tar.gz",
+            "zig_package_hash": "aro-0.0.0-JSD1Qk6lNgDdcDV4Vh7Sfy-34m2TluIVOdPzMmj_0BjX"
+          }
+        ]
+      },
+      {
+        "archive_sha256": "f59dab4e74b399e9d00c44f5d667c5c0d212ddfaf72537b593d76514dd59ec8c",
+        "bytes": 93591,
+        "cache_archive": "translate_c-0.0.0-Q_BUWhVNBwDOEcIqub4VFPJPB6D9dgwzUMHTX5KWr8Xr.tar.gz",
+        "license_file_sha256": {
+          "LICENSE": "5c537d6853e005298a285d508cff9ac7192cea23576c840d485b2b586a7ff177"
+        },
+        "sources": [
+          {
+            "manifest": "pkg/translate-c/build.zig.zon",
+            "url": "https://codeberg.org/vancluever/translate-c/archive/4e879eb8aba615de112eabd1231ea6e01920cead.tar.gz",
+            "zig_package_hash": "translate_c-0.0.0-Q_BUWhVNBwDOEcIqub4VFPJPB6D9dgwzUMHTX5KWr8Xr"
+          }
+        ]
+      },
+      {
+        "archive_sha256": "f10044b1589b2837d4ce6e7b5e2841a76c7c88da05f63fc4f5bee105fa35c761",
+        "bytes": 982941,
+        "cache_archive": "uucode-0.2.0-ZZjBPuuFVgC8YZ8eld4fOKsZANLIhTFMzULQxhkLi1C7.tar.gz",
+        "license_file_sha256": {
+          "LICENSE.md": "312e901e142be2477b4ca859e9311f9e3f80d33372991759b7921c1893605f33"
+        },
+        "sources": [
+          {
+            "manifest": "build.zig.zon",
+            "url": "https://github.com/jacobsandlund/uucode/archive/9d55524551411b493cca41ca06363625d90aff1e.tar.gz",
+            "zig_package_hash": "uucode-0.2.0-ZZjBPuuFVgC8YZ8eld4fOKsZANLIhTFMzULQxhkLi1C7"
+          }
+        ]
+      }
+    ],
+    "scope": "fetched packages, not a complete linked-code SBOM or release license audit"
+  },
+  "dynamic_libraries": "target/ghostty-reference/adapter:\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1359.0.0)\n",
+  "revision": "6301810a48aaa3426887a4316668f18833a40138",
+  "schema_version": 1,
+  "static_library_sha256": "39c116991b4398ac01bfea573671647b8007319a5394a41aa74bbd116a1e5dab",
+  "tools": {
+    "clang": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+    "sdk": "27.0",
+    "sdk_build": "26A425",
+    "xcode": "Xcode 27.0\nBuild version 27A266a",
+    "zig": "0.16.0"
+  },
+  "upstream_files_manifest_sha256": "63bb2a3d229d088703863c4c9b54274a096df5f2975729a066b480d30092a8f3",
+  "upstream_regular_files": 5901,
+  "upstream_sources_unmodified": true,
+  "zig_command": [
+    "zig",
+    "build",
+    "-Demit-lib-vt=true",
+    "-Demit-xcframework=false",
+    "-Doptimize=ReleaseSafe",
+    "--global-cache-dir",
+    "../zig-cache",
+    "--cache-dir",
+    "../build-cache",
+    "--prefix",
+    "../install"
+  ]
+}

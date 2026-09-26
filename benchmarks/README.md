@@ -1,0 +1,17 @@
+# Experiment artifacts and future benchmarks
+
+No throughput, footprint, energy, startup or physical latency benchmark has been run.
+
+The first [headless correctness report](results/p0-06-initial/replay.json) is stored with [environment metadata](results/p0-06-initial/environment.json), [source hashes](results/p0-06-initial/sources.json), [dependency checksums](results/p0-06-initial/dependencies.json) and [artifact hashes](results/p0-06-initial/artifacts.json). The synthetic input and expected states live in `tests/fixtures/terminal-replay.json`.
+
+The [expanded grapheme report](results/p0-06-graphemes/replay.json) retains the 19-fixture / 244-replay follow-up with its own [environment](results/p0-06-graphemes/environment.json) and [artifact hashes](results/p0-06-graphemes/artifacts.json). Original evidence is unchanged.
+
+Run `scripts/replay` for fresh evidence in `target/replay/`. Timestamps, executable hashes and Git dirty state may differ; normalized replay JSON should be identical for the same source/dependencies. The source manifest identifies dirty/untracked code; it does not claim the initial commit contains the harness.
+
+Follow [Phase 0 methodology](../review/PHASE_0_PLAN.md) before performance work. Serialize controlled runs, distinguish parsing from presentation, and never call software timing physical key-to-photon latency. Small sanitized evidence can be committed; large traces require checksummed external artifacts.
+
+The [Ghostty mode-on reference](results/p0-06-ghostty/replay.json) matches 19/19 expectations across 244 replays. Its [mode-off control](results/p0-06-ghostty-legacy/replay.json) matches 9/19 across another 244. Both retain build manifests, source hashes and raw operation checkpoints. See the [method and limits](../experiments/ghostty-reference/README.md); these comparisons introduce no product engine dependency.
+
+The [owned Rust slice](results/p0-06-owned-slice/replay.json) records 14 matching fixtures / 166 replays and five visibly pending fixtures. Its environment records the empty core dependency tree, while the workspace inventory still includes research-only comparison dependencies.
+
+The [owned history/resize follow-up](results/p0-06-owned-history/replay.json) records all 19 matching fixtures / 244 replays, with zero deferrals and unchanged expectations. Its [source manifest](results/p0-06-owned-history/sources.json) identifies the current implementation; the preceding owned-slice result remains historical evidence. See [findings and limits](../research/2026-09-26-history-screen-reflow.md).

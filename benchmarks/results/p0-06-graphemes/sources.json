@@ -1,0 +1,14 @@
+{
+  ".python-version": "922fe0c3de073b01988e23348ea184456161678c5e329e6f34be89be24383f93",
+  "Cargo.lock": "c5c0f64a94f03755f0c6bbeb1373f2440ca69f310835ce6a65f2fb381b3e17e9",
+  "Cargo.toml": "b452e2d08c28d4183419a0ef53d10f78ab1d38e115b0fd9599f317e3cf57f18b",
+  "experiments/terminal-replay/Cargo.toml": "b4ac9beade09aa838943e79c090bac2bf0e66aa5a0e2f96cfb1b0cbbcc721592",
+  "experiments/terminal-replay/README.md": "e375836a28a5ab99770ec1cb80c38bd36b41fe1367ae4f0777797a94b0059e67",
+  "experiments/terminal-replay/src/lib.rs": "3c7666b90c13928bdb8950816b6972f299ddc1cf39e1933cd545e2dae870d2ac",
+  "experiments/terminal-replay/src/main.rs": "7c40bc197a41766cd7375f573b37be24d7fe527475c84ad5889540f332139d21",
+  "experiments/terminal-replay/tests/cli.rs": "f878d8e9aa155077e988da9e0f1855a8b4ff56fe089b11d8edf27b10744478ef",
+  "rust-toolchain.toml": "887f9be066a15585a2c583578e84b0fcb541126d81546276bad3d2ff00d61167",
+  "scripts/replay": "3273bc756de70ee3ed0200d1945f12d923c89e8ae65e47958e987aae60dec080",
+  "scripts/verify": "ffa0a346fc70b395fbbeb0bbe2418b849beffd479defcc701e484956c6ed2072",
+  "tests/fixtures/terminal-replay.json": "fbd51e872b816e067e3a5bee4fae9a84c11b502b5d25ff59ef843971b2f5231c"
+}

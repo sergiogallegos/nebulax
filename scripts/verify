@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+cd "$(dirname "$0")/.."
+python3 scripts/generate-unicode.py --check
+cargo fmt --all --check
+cargo clippy --workspace --all-targets --locked -- -D warnings
+cargo test --workspace --locked
+python3 -m unittest discover -s experiments/ghostty-reference -p 'test_*.py'
+python3 scripts/replay --allow-known-gaps
+python3 scripts/replay --engine owned

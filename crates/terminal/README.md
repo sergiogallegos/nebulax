@@ -1,0 +1,26 @@
+# Owned terminal state
+
+`nebulax-terminal` has **zero Cargo dependencies**, forbids unsafe Rust and performs no I/O. It is an experimental state engine, not a terminal application or a complete VT implementation. Its synchronous API has no runtime or scheduler requirement.
+
+Implemented: bounded primary history, separate alternate screen (DEC 1049), primary resize/reflow and alternate crop/pad, incremental UTF-8, owned Unicode 18 extended-grapheme segmentation, explicit width policy, CR/LF/BS, CSI D, CSI X and CSI K with parameter 0, pending wrap and cluster-aware erasure/overwrite. A lead owns text; continuations cannot contain detached text. Width-changing selectors update ownership, cursor and wrapping together. Single-scalar cells keep their text inline; extra storage is used only for multi-scalar clusters.
+
+Public read views borrow `&self`; Rust prevents them from surviving a mutable `feed`. `finish` explicitly flushes incomplete UTF-8 as U+FFFD and closes parser/cluster state. Ending an ordinary `feed` never flushes partial input. No Ghostty or Alacritty implementation code is copied into this crate. Unicode data attribution is in [the data directory](../../third_party/unicode/README.md).
+
+## Explicit research policies and bounds
+
+- Grid dimensions are checked, require at least two columns and one row, and are capped at 65,536 cells per visible buffer. The caller can lower the cap. Primary history defaults to 1,000 rows and 65,536 cells, retaining at most the smaller of the row cap and cell cap divided by current columns. Both caps can be zero and have hard maxima of 65,536.
+- Clusters retain up to 64 scalars, configurable downward. Further scalars in the same cluster are dropped with a diagnostic while constant-size segmentation context continues to advance. The next grapheme boundary resumes storage. This is a resource policy, not a Unicode limit.
+- The parser accepts one numeric parameter up to 65,535 for supported CSI operations. At 64 parameter/intermediate bytes or numeric overflow it discards through the final byte and reports a limit. OSC/DCS/APC/PM/SOS payloads are consumed in constant space; no native effects run.
+- UTF-8 invalid sequences use maximal-subpart replacement behavior checked against Rust's lossy decoder. C0 controls still act at boundaries of malformed prefixes. UTF-8-encoded C1 controls are reported unsupported; raw C1 bytes are invalid UTF-8.
+- Ambiguous width defaults to one and can be configured to two. Emoji presentation / W/F scalars are wide; Extend/ZWJ/SpacingMark/Prepend and default-ignorable scalars have no independent width. Valid VS16/VS15 pairs can widen/narrow an existing cluster. Cluster width otherwise retains the maximum contribution. This is a tested initial terminal profile, not comprehensive emoji-width or shaping conformance.
+- Unattached zero-width input is discarded with `orphan_mark`. Cursor/control/escape boundaries close the extension target. Styling is unsupported, including SGR; a combining mark after SGR is therefore not attached to earlier text. This compatibility limitation remains visible.
+- Editing either half of a wide cluster clears its whole owner. BS moves one column. Primary scrolling retains bounded history and reports oldest-row eviction. Alternate scrolling or disabled history reports `scrolled_without_history`.
+- Reflow joins soft wraps, preserves hard boundaries, grapheme ownership and printed spaces, and maps cursor offsets. Alternate resize crops/pads physical coordinates while also reflowing saved primary state. Resize reports eviction/cropping; if populated primary cells below the cursor would be lost, it returns `PrimaryContentWouldBeCropped` atomically. This exposed limitation needs a final policy before native-window integration. See [ADR 0003](../../docs/adr/0003-history-screen-and-reflow.md).
+- Geometry-changing resize closes the grapheme extension target but preserves partial UTF-8/CSI input. An identical-size resize is a complete no-op. Repeated alternate entry/exit is idempotent.
+- `FeedOutcome` aggregates boolean diagnostics and a whole-screen changed flag. Dirty-row tracking, external-effect events and a public ABI remain future work. Diagnostic storage cannot grow with input length.
+
+## Validation and remaining work
+
+Run `scripts/verify` or `cargo test -p nebulax-terminal --locked`. Tests cover all 853 official Unicode 18 grapheme cases, 8,000 malformed three-byte combinations against Rust's decoder, explicit streaming/edge/edit/overflow expectations, deterministic mixed streams and inline ASCII storage. The segmentation detector is standard-conformant on that test corpus; the terminal adds the documented control/storage/width policies.
+
+The [owned replay adapter](../../experiments/owned-replay/README.md) matches all 19 existing fixtures under 244 delivery variants with no deferrals. Fourteen additional integration tests cover history budgets, screen separation, reflow round trips, cursor mapping, partial input, atomic resize rejection, extreme aspect ratios and mixed-operation delivery equivalence. Styling, other VT protocols, comprehensive width compatibility, selection/text accessibility, allocator-failure behavior and performance remain unproven. No native renderer, PTY, GUI or Swift ABI is introduced.
