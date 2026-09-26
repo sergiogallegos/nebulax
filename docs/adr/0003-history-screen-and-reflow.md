@@ -14,7 +14,9 @@ Alternate resize preserves physical coordinates using crop/pad. Remove a clipped
 
 Build sparse rows during reflow and materialize padding only for the bounded retained history/viewport. Otherwise a legal narrow/tall → wide/short resize could allocate a full-width row for every old hard line. All logic is safe Rust with no new dependencies.
 
-## Explicit unresolved edge
+## Original resize limitation — superseded by ADR 0004
+
+The following records the first implementation. [ADR 0004](0004-cursor-anchored-resize.md) removes this error and defines successful bounded resize with explicit cropping.
 
 A sufficiently small primary viewport cannot always keep the cursor and all later text visible simultaneously. The current slice returns `PrimaryContentWouldBeCropped` and leaves **both screens and partial input unchanged** if reflow would discard populated primary cells below the cursor. This also protects the saved primary while alternate is active. History eviction under configured limits remains allowed and reported. Alternate crop remains allowed and reported.
 

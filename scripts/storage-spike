@@ -1,0 +1,125 @@
+#!/usr/bin/env python3
+"""Serialize storage-only release measurements with reproducible source provenance."""
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import platform
+import random
+import runpy
+import statistics
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+COMMON = runpy.run_path(str(ROOT / 'scripts/replay'))
+SCENARIOS = ('visible', 'history_ascii', 'history_mixed', 'history_dense', 'cluster_limit')
+VARIANTS = ('baseline', 'compact8', 'compact16')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--output', type=Path)
+    parser.add_argument('--samples', type=int, default=30)
+    parser.add_argument('--warmups', type=int, default=3)
+    parser.add_argument('--seed', type=int, default=20260926)
+    parser.add_argument('--scenarios', nargs='+', choices=SCENARIOS, default=list(SCENARIOS))
+    args = parser.parse_args()
+    if args.samples < 1 or args.warmups < 0 or len(set(args.scenarios)) != len(args.scenarios):
+        parser.error('positive samples, nonnegative warmups and distinct scenarios required')
+    started = datetime.now(timezone.utc)
+    output = args.output or ROOT / 'target/storage-spike' / started.strftime('%Y%m%dT%H%M%S.%fZ')
+    output.mkdir(parents=True, exist_ok=False)
+    sources = COMMON['source_manifest']()
+    build = COMMON['run'](['cargo', 'build', '--release', '--locked', '--offline', '-p', 'nebulax-storage-spike', '--message-format=json'])
+    executable = None
+    for line in build.stdout.splitlines():
+        message = json.loads(line)
+        if message.get('reason') == 'compiler-artifact' and message.get('target', {}).get('name') == 'nebulax-storage-spike' and message.get('executable'):
+            executable = Path(message['executable'])
+    if executable is None:
+        raise RuntimeError('Cargo did not report the experiment executable')
+    rng = random.Random(args.seed)
+    samples = []
+    expected = {}
+    with (output / 'samples.jsonl').open('w') as raw:
+        for scenario in args.scenarios:
+            for repetition in range(-args.warmups, args.samples):
+                order = list(VARIANTS)
+                rng.shuffle(order)
+                for position, variant in enumerate(order):
+                    result = COMMON['run']([str(executable), variant, scenario])
+                    sample = json.loads(result.stdout)
+                    sample.update(repetition=repetition, warmup=repetition < 0, order=position)
+                    signature = (sample['checksum'], sample['snapshot_checksum'])
+                    if scenario in expected and expected[scenario] != signature:
+                        raise RuntimeError(f'content mismatch for {scenario}/{variant}')
+                    expected[scenario] = signature
+                    if not all(sample['checks'].values()):
+                        raise RuntimeError('experiment correctness check failed')
+                    raw.write(json.dumps(sample, sort_keys=True) + '\n')
+                    raw.flush()
+                    if repetition >= 0:
+                        samples.append(sample)
+                if repetition in (-1, 9, 19, args.samples - 1):
+                    print(f'{scenario}: completed repetition {repetition + 1}/{args.samples}', flush=True)
+    summary = []
+    for scenario in args.scenarios:
+        for variant in VARIANTS:
+            group = [s for s in samples if s['scenario'] == scenario and s['variant'] == variant]
+            first = group[0]
+            for field in ('capacity_bytes', 'allocations', 'arena_slots_after_scroll', 'layout'):
+                if any(s[field] != first[field] for s in group):
+                    raise RuntimeError(f'nondeterministic capacity/accounting: {scenario}/{variant}/{field}')
+            timings = {name: {'median': statistics.median(s['timings_ns'][name] for s in group),
+                              'min': min(s['timings_ns'][name] for s in group),
+                              'max': max(s['timings_ns'][name] for s in group)} for name in first['timings_ns']}
+            summary.append({**{k: first[k] for k in ('variant', 'scenario', 'columns', 'retained_rows', 'visible_rows', 'scrolls', 'capacity_bytes', 'allocations', 'layout', 'arena_slots_after_scroll', 'checksum')}, 'samples': len(group), 'timings_ns': timings})
+    stable = sources == COMMON['source_manifest']()
+    write = COMMON['write_json']
+    write(output / 'summary.json', summary)
+    write(output / 'sources.json', sources)
+    write(output / 'environment.json', {
+        'measurement_kind': 'synthetic_storage_capacity_and_operation_timing_not_terminal_performance',
+        'started_utc': started.isoformat(), 'finished_utc': datetime.now(timezone.utc).isoformat(),
+        'samples_per_case': args.samples, 'warmups_per_case': args.warmups, 'order_seed': args.seed,
+        'order': 'scenario blocks; shuffled variant order per repetition; sequential fresh processes',
+        'git_commit': COMMON['run'](['git', 'rev-parse', 'HEAD']).stdout.strip(),
+        'git_dirty': bool(COMMON['run'](['git', 'status', '--porcelain']).stdout),
+        'sources_unchanged_during_run': stable,
+        'executable_sha256': hashlib.sha256(executable.read_bytes()).hexdigest(),
+        'rustc': COMMON['run'](['rustc', '-Vv']).stdout.strip(),
+        'cargo': COMMON['run'](['cargo', '-V']).stdout.strip(), 'python': platform.python_version(),
+        'os': platform.system(), 'architecture': platform.machine(),
+        'cpu': COMMON['optional_command'](['sysctl', '-n', 'machdep.cpu.brand_string']) if sys.platform == 'darwin' else None,
+        'ram_bytes': COMMON['optional_command'](['sysctl', '-n', 'hw.memsize']) if sys.platform == 'darwin' else None,
+        'macos': COMMON['optional_command'](['sw_vers']) if sys.platform == 'darwin' else None,
+        'power': COMMON['optional_command'](['pmset', '-g', 'batt']) if sys.platform == 'darwin' else None,
+        'thermal': COMMON['optional_command'](['pmset', '-g', 'therm']) if sys.platform == 'darwin' else None,
+        'profile': 'release; default Cargo settings; no custom optimization flags',
+        'process_scope': 'one synthetic storage process at a time; no PTY, rendering or native callbacks',
+        'completion': 'synchronous operation return, with correctness checks outside timed sections',
+        'memory_scope': 'owned Vec/VecDeque capacities and Arc row payloads; excludes allocator metadata, Arc headers, stack, input corpus, code and RSS',
+        'allocation_scope': 'observed instrumented container capacity growths and requested capacities; not global allocator events or cumulative copied bytes',
+        'limitations': ['No style/hyperlink dictionaries; candidate fields reserved and zero',
+            'Baseline matches cell layout/cluster growth, but uses row deque plus generations instead of product screen/history structure',
+            'Repack retains all rows; not full cursor/history/alternate terminal resize',
+            'Two snapshots counted together; old/new row storage overlap counted for repack',
+            'Timing phases within each process are ordered; host scheduling and thermal noise are uncontrolled',
+            'No global allocator interception, RSS, energy, physical latency or competitor measurements'],
+    })
+    write(output / 'artifacts.json', {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(output.iterdir()) if p.is_file()})
+    if not stable:
+        raise RuntimeError('sources changed during measurement; evidence invalid')
+    print(f'Artifacts: {output.resolve()}')
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (OSError, ValueError, RuntimeError, subprocess.CalledProcessError) as error:
+        print(f'storage experiment failed: {error}', file=sys.stderr)
+        if isinstance(error, subprocess.CalledProcessError):
+            print(error.stderr, file=sys.stderr)
+        sys.exit(2)

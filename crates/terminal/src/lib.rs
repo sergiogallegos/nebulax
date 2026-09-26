@@ -66,9 +66,6 @@ mod tests {
 pub enum Error {
     InvalidGeometry,
     InvalidLimits,
-    /// Requested primary viewport cannot keep its cursor and later text visible.
-    /// Resize is rejected atomically rather than discarding that text.
-    PrimaryContentWouldBeCropped,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -130,11 +127,16 @@ impl Row {
     }
 }
 
-/// Counts physical rows/cells discarded by the explicit resize policy.
+/// Losses summed across both buffers. Primary counts use the reflowed width;
+/// alternate counts use the old physical grid. History eviction is separate.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ResizeOutcome {
+    /// Oldest primary rows dropped to satisfy the new history budget.
     pub history_evicted: usize,
+    /// Rows cropped below the retained primary viewport or alternate grid.
     pub cropped_rows: usize,
+    /// Cropped occupied cells, counting both wide halves and printed spaces,
+    /// excluding empty cells and structural wrap padding.
     pub cropped_cells: usize,
 }
 
@@ -242,8 +244,11 @@ impl Terminal {
     }
 
     /// Resize both screens; invalid geometry leaves the complete terminal unchanged.
-    /// Primary state reflows, alternate state crops/pads. Geometry changes close the
-    /// current extension target but preserve an incomplete UTF-8/escape sequence.
+    /// Every supported geometry succeeds. Primary reflow keeps the cursor visible,
+    /// retaining preceding rows within history limits and cropping later rows only
+    /// when necessary. Alternate state crops/pads. Losses from both buffers are
+    /// reported. Geometry changes close the current extension target but preserve
+    /// an incomplete UTF-8/escape sequence. Allocation failure is not recovered.
     pub fn resize(&mut self, size: Size) -> Result<ResizeOutcome, Error> {
         if size.columns < 2
             || size.lines == 0
@@ -262,14 +267,8 @@ impl Terminal {
         } else {
             self.active.reflow(size, self.limits)
         };
-        if self.saved_primary.is_none() && out.cropped_cells != 0 {
-            return Err(Error::PrimaryContentWouldBeCropped);
-        }
         let saved = if let Some(primary) = self.saved_primary.as_ref() {
             let (screen, more) = primary.reflow(size, self.limits);
-            if more.cropped_cells != 0 {
-                return Err(Error::PrimaryContentWouldBeCropped);
-            }
             out.history_evicted += more.history_evicted;
             out.cropped_rows += more.cropped_rows;
             out.cropped_cells += more.cropped_cells;

@@ -248,6 +248,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "nebulax-storage-spike"
+version = "0.1.0"
+dependencies = [
+ "nebulax-terminal",
+ "serde_json",
+]
+
+[[package]]
 name = "nebulax-terminal"
 version = "0.1.0"
 

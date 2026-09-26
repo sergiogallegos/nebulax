@@ -9,6 +9,7 @@
 | Replay terminal bytes and compare delivery | `experiments/terminal-replay/src/lib.rs` | `cargo test --workspace --locked` |
 | Compare Ghostty as a research reference | `experiments/ghostty-reference/` | Pinned build, strict replay, explicit mode control |
 | Change owned Rust engine | `crates/terminal/` | Unicode conformance, stream/edit invariants, owned replay |
+| Measure storage/snapshot alternatives | `experiments/storage-spike/`, `scripts/storage-spike` | Six correctness tests; serialized release samples with capacity accounting |
 | Replay owned engine | `experiments/owned-replay/`, `scripts/replay --engine owned` | All 19 fixtures strict / 244 replays; no deferrals |
 | Update Unicode data/rules | `third_party/unicode/`, `scripts/generate-unicode.py` | Stable verification, checksums, regeneration, official tests |
 | Change CLI exit/report behavior | `experiments/terminal-replay/src/main.rs`, integration tests | `scripts/verify` |
@@ -18,6 +19,6 @@
 | Review findings and open compatibility gaps | `research/`, original `review/` archive | Trace claims to raw artifacts/fixtures |
 | CI | `.github/workflows/verify.yml` | Same `scripts/verify`; hosted execution separately reported |
 
-There is one owned core crate, two Cargo research runners and one isolated C/Python reference adapter. The core is a bounded research slice, not a complete production emulator. There is no native app, PTY runtime, control server, website or release pipeline yet. The planned `nebulaxterm` command is not the research binary `nebulax-replay`.
+There is one owned core crate, three Cargo research runners and one isolated C/Python reference adapter. The core is a bounded research slice, not a complete production emulator. There is no native app, PTY runtime, control server, website or release pipeline yet. The planned `nebulaxterm` command is not the research binary `nebulax-replay`.
 
 Historical review paths are retained to preserve existing links. [ADR 0001](../adr/0001-approved-direction.md) and its engine-direction supersession [ADR 0002](../adr/0002-owned-rust-engine-and-dependency-policy.md) record acceptance; review-era statements about approval pending are historical.

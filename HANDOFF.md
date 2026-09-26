@@ -1,6 +1,6 @@
 # Nebulax session handoff
 
-Updated: 2026-09-26, after the owner-provided Opus review and authorization to checkpoint all progress on main.
+Updated: 2026-09-26, after the storage/snapshot experiment completed.
 
 ## Resume here
 
@@ -37,17 +37,21 @@ Read this file, [plans/NOW.md](plans/NOW.md), [ADR 0001](docs/adr/0001-approved-
 
 - Implemented bounded primary history, independent alternate screen (DEC 1049), primary reflow and alternate crop/pad with zero new dependencies. All **19 fixtures / 244 replays** now pass with no deferrals or changed expectations. Added 14 independent integration tests. See [policies and the explicit primary resize limitation](docs/adr/0003-history-screen-and-reflow.md), [findings](research/2026-09-26-history-screen-reflow.md) and [retained evidence](benchmarks/results/p0-06-owned-history).
 
+- Resolved ordinary primary-resize rejection, including hidden primary content. Every supported geometry now succeeds with explicit crop/eviction counters and no new dependencies. [ADR 0004](docs/adr/0004-cursor-anchored-resize.md) records the policy, tradeoff and evidence; the previous rejection report remains historical. Added eight tests and revised the previous rejection test, including an independent 10,890-case geometry oracle.
+
+- Completed an isolated safe-Rust storage/snapshot experiment: 40-byte baseline versus 8/16-byte candidates, lazy row chunks, recycled cluster slots and independent immutable snapshots. Recorded 450 measured samples plus 45 warmups across five workloads; all content checks match. [Findings](research/2026-09-26-storage-snapshot-spike.md) and [ADR 0005](docs/adr/0005-storage-and-snapshot-direction.md) document memory wins and dense/long-cluster counterexamples. No core representation change or new third-party dependency; added six tests.
+
 ## Verification
 
-Current `scripts/verify` passes Unicode input/hash/regeneration checks, formatting, Clippy with warnings denied, **36 Rust tests**, two Python tests (one optional live Ghostty test skipped), recorded Alacritty replay with its exact known-gap fingerprints and strict all-19 owned-engine replay. The core tests include 853 official segmentation cases, 8,000 malformed UTF-8 triples, streamed edit/edge cases, bounded cluster/parser behavior, mixed-stream invariants and inline ASCII storage. Source/artifact hash and current-document local-link checks also pass. No new third-party Cargo dependency was added.
+Current `scripts/verify` passes Unicode input/hash/regeneration checks, formatting, Clippy with warnings denied, **50 Rust tests**, two Python tests (one optional live Ghostty test skipped), recorded Alacritty replay with its exact known-gap fingerprints and strict all-19 owned-engine replay. The core tests include 853 official segmentation cases, 8,000 malformed UTF-8 triples, streamed edit/edge cases, bounded cluster/parser behavior, mixed-stream invariants and inline ASCII storage. Source/artifact hash and current-document local-link checks also pass. No new third-party Cargo dependency was added.
 
-A separate source snapshot with a fresh Cargo target directory passed `scripts/verify` for the initial nine-fixture slice using cached pinned dependencies with Cargo offline; its normalized report matched the initial evidence. After the Xcode update, workspace verification passed again with the expanded 19-fixture corpus. Swift AppKit/Core Text/Metal imports also type-check with the updated toolchain. Hosted CI is configured but has not run. No benchmark results or complete emulator-conformance claim have been made.
+A separate source snapshot with a fresh Cargo target directory passed `scripts/verify` for the initial nine-fixture slice using cached pinned dependencies with Cargo offline; its normalized report matched the initial evidence. After the Xcode update, workspace verification passed again with the expanded 19-fixture corpus. Swift AppKit/Core Text/Metal imports also type-check with the updated toolchain. Hosted CI is configured; results have not been verified in this session. The later storage experiment records synthetic capacity/timing results with explicit limits; no product performance or complete emulator-conformance claim has been made.
 
 ## Current stage and next step
 
 Phase D bootstrap, reference comparisons and the owned grapheme/history/alternate/reflow slices are implemented. Architecture direction is accepted; Phase 0A validation remains open. The owner provided an Opus review highlighting integration risks. Source review confirmed its main findings; [the assessment](docs/architecture/FOUNDATION_REVIEW.md) records qualifications and revises the implementation order. Foundations and an early integrated native path now precede broad SGR/protocol expansion. [NOW](plans/NOW.md) is the current-task source.
 
-Current resize still rejects when populated primary cells below the cursor would be lost, including inactive primary state. This is an integration blocker to resolve, not finished window behavior. Existing Phase 0 and owned-engine approvals remain valid; do not request them again.
+Resize now retains the cursor and crops excess subsequent primary rows with explicit counters, including inactive primary state. That rejection blocker is resolved; native integration is still unimplemented. Existing Phase 0 and owned-engine approvals remain valid; do not request them again.
 
 Remaining Phase 0 work includes full protocol/resource/text-access acceptance, competitor baselines, PTY/lifecycle, native text/FFI, renderer/scheduler and config/approval proof. Follow the staged [Phase 0 plan](review/PHASE_0_PLAN.md).
 
@@ -55,6 +59,6 @@ Remaining Phase 0 work includes full protocol/resource/text-access acceptance, c
 
 Host reports macOS 27.0 (26A428), arm64. The owner updated Xcode: verified **Xcode 27.0 (27A266a), Apple Swift 6.4 (`swiftlang-6.4.0.34.1`), macOS SDK 27.0 (26A425)**. Initial license/first-launch setup blocked compilation but is now resolved; Rust verification and the native import smoke check succeeded. No global toolchain was changed or installed by this session.
 
-The owner explicitly requested adding, committing and pushing all progress to `main`. Repository history starts with README-only `67a7237`; use `git log` and `git status -sb` for the implementation checkpoint and remote synchronization state. Earlier retained result metadata truthfully records the pre-checkpoint dirty source snapshots; preserve it. GitHub issues have not been created; `plans/NOW.md` remains the temporary current-task source. Hosted CI status should be checked separately from local validation.
+The owner-requested progress checkpoint was pushed to `main` as `db2acff`, after README-only `67a7237`. The owner authorized the resize/storage checkpoint on main; use `git log` and `git status -sb` for current state. Earlier retained result metadata truthfully records the pre-checkpoint dirty source snapshots; preserve it. GitHub issues have not been created; `plans/NOW.md` remains the temporary current-task source. Hosted CI status should be checked separately from local validation.
 
-There is no terminal application, production PTY, GUI, control server, website, release or background process to restore. Normal replay outputs and builds are under ignored `target/`; six retained evidence sets are under `benchmarks/`. The ignored Ghostty reference build/cache is disposable and can be reproduced using its experiment README.
+There is no terminal application, production PTY, GUI, control server, website, release or background process to restore. Normal replay outputs and builds are under ignored `target/`; eight retained evidence sets (seven correctness snapshots plus one storage experiment) are under `benchmarks/`. The ignored Ghostty reference build/cache is disposable and can be reproduced using its experiment README.

@@ -1,0 +1,1397 @@
+[
+  {
+    "variant": "baseline",
+    "scenario": "visible",
+    "columns": 80,
+    "retained_rows": 40,
+    "visible_rows": 40,
+    "scrolls": 200,
+    "capacity_bytes": {
+      "after_ascii_replacement": 131072,
+      "after_trim": 131072,
+      "filled_grid": 131072,
+      "repack_peak_grid": 268416,
+      "snapshot_full": 54400,
+      "two_frames_one_changed_row": 56072,
+      "two_unchanged_frames": 54720
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 45,
+        "requested_capacity_bytes": 133952
+      },
+      "repack_roundtrip": {
+        "container_growths": 131,
+        "requested_capacity_bytes": 277248
+      },
+      "scroll_batch": {
+        "container_growths": 200,
+        "requested_capacity_bytes": 640000
+      },
+      "snapshot_full": {
+        "container_growths": 81,
+        "requested_capacity_bytes": 54400
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 1672
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 0,
+    "checksum": "cbedf4283b2c1c45",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 29333.5,
+        "min": 28375,
+        "max": 36125
+      },
+      "repack_roundtrip": {
+        "median": 54104.5,
+        "min": 53334,
+        "max": 63292
+      },
+      "scroll_batch": {
+        "median": 116750.0,
+        "min": 114583,
+        "max": 140875
+      },
+      "snapshot_full": {
+        "median": 12396.0,
+        "min": 11542,
+        "max": 14958
+      },
+      "snapshot_one_changed_row": {
+        "median": 917.0,
+        "min": 791,
+        "max": 1291
+      },
+      "snapshot_unchanged": {
+        "median": 875.0,
+        "min": 833,
+        "max": 1167
+      },
+      "trim_free_text": {
+        "median": 42.0,
+        "min": 0,
+        "max": 84
+      }
+    }
+  },
+  {
+    "variant": "compact8",
+    "scenario": "visible",
+    "columns": 80,
+    "retained_rows": 40,
+    "visible_rows": 40,
+    "scrolls": 200,
+    "capacity_bytes": {
+      "after_ascii_replacement": 42688,
+      "after_trim": 42688,
+      "filled_grid": 26752,
+      "repack_peak_grid": 85120,
+      "snapshot_full": 54400,
+      "two_frames_one_changed_row": 56072,
+      "two_unchanged_frames": 54720
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 26752
+      },
+      "repack_roundtrip": {
+        "container_growths": 8,
+        "requested_capacity_bytes": 85120
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 81,
+        "requested_capacity_bytes": 54400
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 1672
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 0,
+    "checksum": "cbedf4283b2c1c45",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 10146.5,
+        "min": 9375,
+        "max": 15875
+      },
+      "repack_roundtrip": {
+        "median": 26000.0,
+        "min": 24417,
+        "max": 31125
+      },
+      "scroll_batch": {
+        "median": 38646.0,
+        "min": 36417,
+        "max": 45750
+      },
+      "snapshot_full": {
+        "median": 9542.0,
+        "min": 9041,
+        "max": 11417
+      },
+      "snapshot_one_changed_row": {
+        "median": 1083.5,
+        "min": 1000,
+        "max": 1417
+      },
+      "snapshot_unchanged": {
+        "median": 1062.5,
+        "min": 1000,
+        "max": 1208
+      },
+      "trim_free_text": {
+        "median": 0.0,
+        "min": 0,
+        "max": 42
+      }
+    }
+  },
+  {
+    "variant": "compact16",
+    "scenario": "visible",
+    "columns": 80,
+    "retained_rows": 40,
+    "visible_rows": 40,
+    "scrolls": 200,
+    "capacity_bytes": {
+      "after_ascii_replacement": 83648,
+      "after_trim": 83648,
+      "filled_grid": 52352,
+      "repack_peak_grid": 165440,
+      "snapshot_full": 54400,
+      "two_frames_one_changed_row": 56072,
+      "two_unchanged_frames": 54720
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 52352
+      },
+      "repack_roundtrip": {
+        "container_growths": 8,
+        "requested_capacity_bytes": 165440
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 81,
+        "requested_capacity_bytes": 54400
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 1672
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 0,
+    "checksum": "cbedf4283b2c1c45",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 14021.0,
+        "min": 13208,
+        "max": 16667
+      },
+      "repack_roundtrip": {
+        "median": 33396.0,
+        "min": 31125,
+        "max": 37416
+      },
+      "scroll_batch": {
+        "median": 39624.5,
+        "min": 37417,
+        "max": 47208
+      },
+      "snapshot_full": {
+        "median": 9750.5,
+        "min": 9125,
+        "max": 13125
+      },
+      "snapshot_one_changed_row": {
+        "median": 1125.0,
+        "min": 1000,
+        "max": 1250
+      },
+      "snapshot_unchanged": {
+        "median": 1042.0,
+        "min": 958,
+        "max": 1250
+      },
+      "trim_free_text": {
+        "median": 0.0,
+        "min": 0,
+        "max": 42
+      }
+    }
+  },
+  {
+    "variant": "baseline",
+    "scenario": "history_ascii",
+    "columns": 200,
+    "retained_rows": 10040,
+    "visible_rows": 40,
+    "scrolls": 1000,
+    "capacity_bytes": {
+      "after_ascii_replacement": 81106432,
+      "after_trim": 81106432,
+      "filled_grid": 81106432,
+      "repack_peak_grid": 163802496,
+      "snapshot_full": 131200,
+      "two_frames_one_changed_row": 134792,
+      "two_unchanged_frames": 131520
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 10053,
+        "requested_capacity_bytes": 81892672
+      },
+      "repack_roundtrip": {
+        "container_growths": 30147,
+        "requested_capacity_bytes": 166161408
+      },
+      "scroll_batch": {
+        "container_growths": 1000,
+        "requested_capacity_bytes": 8000000
+      },
+      "snapshot_full": {
+        "container_growths": 81,
+        "requested_capacity_bytes": 131200
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 3592
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 0,
+    "checksum": "34de7fc618971885",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 15721333.0,
+        "min": 15452208,
+        "max": 17454500
+      },
+      "repack_roundtrip": {
+        "median": 36434395.5,
+        "min": 36042375,
+        "max": 43244083
+      },
+      "scroll_batch": {
+        "median": 1479604.0,
+        "min": 1471875,
+        "max": 1692375
+      },
+      "snapshot_full": {
+        "median": 37125.0,
+        "min": 31459,
+        "max": 85292
+      },
+      "snapshot_one_changed_row": {
+        "median": 1145.5,
+        "min": 1000,
+        "max": 1250
+      },
+      "snapshot_unchanged": {
+        "median": 875.0,
+        "min": 791,
+        "max": 1000
+      },
+      "trim_free_text": {
+        "median": 20.5,
+        "min": 0,
+        "max": 83
+      }
+    }
+  },
+  {
+    "variant": "compact8",
+    "scenario": "history_ascii",
+    "columns": 200,
+    "retained_rows": 10040,
+    "visible_rows": 40,
+    "scrolls": 1000,
+    "capacity_bytes": {
+      "after_ascii_replacement": 16330240,
+      "after_trim": 16330240,
+      "filled_grid": 16317248,
+      "repack_peak_grid": 33074688,
+      "snapshot_full": 131200,
+      "two_frames_one_changed_row": 134792,
+      "two_unchanged_frames": 131520
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 321,
+        "requested_capacity_bytes": 16329344
+      },
+      "repack_roundtrip": {
+        "container_growths": 957,
+        "requested_capacity_bytes": 33111168
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 81,
+        "requested_capacity_bytes": 131200
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 3592
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 0,
+    "checksum": "34de7fc618971885",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 5014562.5,
+        "min": 4950709,
+        "max": 5547375
+      },
+      "repack_roundtrip": {
+        "median": 10836375.0,
+        "min": 10602958,
+        "max": 13154958
+      },
+      "scroll_batch": {
+        "median": 463937.5,
+        "min": 452708,
+        "max": 473833
+      },
+      "snapshot_full": {
+        "median": 25729.0,
+        "min": 22875,
+        "max": 33583
+      },
+      "snapshot_one_changed_row": {
+        "median": 1291.5,
+        "min": 1125,
+        "max": 1417
+      },
+      "snapshot_unchanged": {
+        "median": 1125.0,
+        "min": 1000,
+        "max": 1209
+      },
+      "trim_free_text": {
+        "median": 41.0,
+        "min": 0,
+        "max": 42
+      }
+    }
+  },
+  {
+    "variant": "compact16",
+    "scenario": "history_ascii",
+    "columns": 200,
+    "retained_rows": 10040,
+    "visible_rows": 40,
+    "scrolls": 1000,
+    "capacity_bytes": {
+      "after_ascii_replacement": 32407040,
+      "after_trim": 32407040,
+      "filled_grid": 32381248,
+      "repack_peak_grid": 65389056,
+      "snapshot_full": 131200,
+      "two_frames_one_changed_row": 134792,
+      "two_unchanged_frames": 131520
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 321,
+        "requested_capacity_bytes": 32393344
+      },
+      "repack_roundtrip": {
+        "container_growths": 957,
+        "requested_capacity_bytes": 65425536
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 81,
+        "requested_capacity_bytes": 131200
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 3592
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 0,
+    "checksum": "34de7fc618971885",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 6384333.5,
+        "min": 6302417,
+        "max": 7841042
+      },
+      "repack_roundtrip": {
+        "median": 13078146.0,
+        "min": 12917209,
+        "max": 14891709
+      },
+      "scroll_batch": {
+        "median": 485000.5,
+        "min": 478875,
+        "max": 520917
+      },
+      "snapshot_full": {
+        "median": 29125.5,
+        "min": 25625,
+        "max": 35750
+      },
+      "snapshot_one_changed_row": {
+        "median": 1271.0,
+        "min": 1042,
+        "max": 1375
+      },
+      "snapshot_unchanged": {
+        "median": 1187.5,
+        "min": 1083,
+        "max": 1375
+      },
+      "trim_free_text": {
+        "median": 41.0,
+        "min": 0,
+        "max": 42
+      }
+    }
+  },
+  {
+    "variant": "baseline",
+    "scenario": "history_mixed",
+    "columns": 160,
+    "retained_rows": 2040,
+    "visible_rows": 40,
+    "scrolls": 500,
+    "capacity_bytes": {
+      "after_ascii_replacement": 13154304,
+      "after_trim": 13154304,
+      "filled_grid": 13807104,
+      "repack_peak_grid": 27467712,
+      "snapshot_full": 115840,
+      "two_frames_one_changed_row": 118792,
+      "two_unchanged_frames": 116160
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 42850,
+        "requested_capacity_bytes": 13905216
+      },
+      "repack_roundtrip": {
+        "container_growths": 87741,
+        "requested_capacity_bytes": 27354240
+      },
+      "scroll_batch": {
+        "container_growths": 10500,
+        "requested_capacity_bytes": 3360000
+      },
+      "snapshot_full": {
+        "container_growths": 281,
+        "requested_capacity_bytes": 125440
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 2952
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 0,
+    "checksum": "001e23d4de61d925",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 3030791.5,
+        "min": 2973375,
+        "max": 3331000
+      },
+      "repack_roundtrip": {
+        "median": 8073624.5,
+        "min": 7935000,
+        "max": 9251917
+      },
+      "scroll_batch": {
+        "median": 709603.5,
+        "min": 681125,
+        "max": 878167
+      },
+      "snapshot_full": {
+        "median": 37374.5,
+        "min": 35584,
+        "max": 52208
+      },
+      "snapshot_one_changed_row": {
+        "median": 1084.0,
+        "min": 958,
+        "max": 1208
+      },
+      "snapshot_unchanged": {
+        "median": 958.0,
+        "min": 833,
+        "max": 1042
+      },
+      "trim_free_text": {
+        "median": 20.5,
+        "min": 0,
+        "max": 125
+      }
+    }
+  },
+  {
+    "variant": "compact8",
+    "scenario": "history_mixed",
+    "columns": 160,
+    "retained_rows": 2040,
+    "visible_rows": 40,
+    "scrolls": 500,
+    "capacity_bytes": {
+      "after_ascii_replacement": 5422080,
+      "after_trim": 4769280,
+      "filled_grid": 5411648,
+      "repack_peak_grid": 8177664,
+      "snapshot_full": 115840,
+      "two_frames_one_changed_row": 118792,
+      "two_unchanged_frames": 116160
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 40883,
+        "requested_capacity_bytes": 7510016
+      },
+      "repack_roundtrip": {
+        "container_growths": 201,
+        "requested_capacity_bytes": 5431936
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 281,
+        "requested_capacity_bytes": 125440
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 2952
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 40800,
+    "checksum": "001e23d4de61d925",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 1657666.5,
+        "min": 1630375,
+        "max": 1781667
+      },
+      "repack_roundtrip": {
+        "median": 1602750.0,
+        "min": 1583833,
+        "max": 1895625
+      },
+      "scroll_batch": {
+        "median": 234562.5,
+        "min": 233417,
+        "max": 248959
+      },
+      "snapshot_full": {
+        "median": 34854.5,
+        "min": 31250,
+        "max": 49375
+      },
+      "snapshot_one_changed_row": {
+        "median": 1250.0,
+        "min": 1125,
+        "max": 1333
+      },
+      "snapshot_unchanged": {
+        "median": 1145.5,
+        "min": 1000,
+        "max": 1250
+      },
+      "trim_free_text": {
+        "median": 310270.5,
+        "min": 306667,
+        "max": 334208
+      }
+    }
+  },
+  {
+    "variant": "compact16",
+    "scenario": "history_mixed",
+    "columns": 160,
+    "retained_rows": 2040,
+    "visible_rows": 40,
+    "scrolls": 500,
+    "capacity_bytes": {
+      "after_ascii_replacement": 8043520,
+      "after_trim": 7390720,
+      "filled_grid": 8022848,
+      "repack_peak_grid": 13453312,
+      "snapshot_full": 115840,
+      "two_frames_one_changed_row": 118792,
+      "two_unchanged_frames": 116160
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 40883,
+        "requested_capacity_bytes": 10121216
+      },
+      "repack_roundtrip": {
+        "container_growths": 201,
+        "requested_capacity_bytes": 10707584
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 281,
+        "requested_capacity_bytes": 125440
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 2952
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 40800,
+    "checksum": "001e23d4de61d925",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 1865542.0,
+        "min": 1832000,
+        "max": 2122666
+      },
+      "repack_roundtrip": {
+        "median": 1969417.0,
+        "min": 1947792,
+        "max": 2330042
+      },
+      "scroll_batch": {
+        "median": 239229.0,
+        "min": 235917,
+        "max": 265084
+      },
+      "snapshot_full": {
+        "median": 32895.5,
+        "min": 31333,
+        "max": 43250
+      },
+      "snapshot_one_changed_row": {
+        "median": 1250.0,
+        "min": 1000,
+        "max": 1709
+      },
+      "snapshot_unchanged": {
+        "median": 1125.0,
+        "min": 1041,
+        "max": 1292
+      },
+      "trim_free_text": {
+        "median": 315354.0,
+        "min": 307375,
+        "max": 391083
+      }
+    }
+  },
+  {
+    "variant": "baseline",
+    "scenario": "history_dense",
+    "columns": 160,
+    "retained_rows": 1040,
+    "visible_rows": 40,
+    "scrolls": 500,
+    "capacity_bytes": {
+      "after_ascii_replacement": 6754304,
+      "after_trim": 6754304,
+      "filled_grid": 8085504,
+      "repack_peak_grid": 15686912,
+      "snapshot_full": 146560,
+      "two_frames_one_changed_row": 149512,
+      "two_unchanged_frames": 146880
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 84250,
+        "requested_capacity_bytes": 8183616
+      },
+      "repack_roundtrip": {
+        "container_growths": 169541,
+        "requested_capacity_bytes": 15315840
+      },
+      "scroll_batch": {
+        "container_growths": 40500,
+        "requested_capacity_bytes": 3840000
+      },
+      "snapshot_full": {
+        "container_growths": 361,
+        "requested_capacity_bytes": 186880
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 2952
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 0,
+    "checksum": "5e4e8c8368963c65",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 1966770.5,
+        "min": 1944459,
+        "max": 2004417
+      },
+      "repack_roundtrip": {
+        "median": 4829687.5,
+        "min": 4679750,
+        "max": 4910291
+      },
+      "scroll_batch": {
+        "median": 1033854.0,
+        "min": 1028708,
+        "max": 1047833
+      },
+      "snapshot_full": {
+        "median": 48083.5,
+        "min": 46167,
+        "max": 79834
+      },
+      "snapshot_one_changed_row": {
+        "median": 1125.0,
+        "min": 1041,
+        "max": 1208
+      },
+      "snapshot_unchanged": {
+        "median": 875.0,
+        "min": 791,
+        "max": 1041
+      },
+      "trim_free_text": {
+        "median": 0.0,
+        "min": 0,
+        "max": 42
+      }
+    }
+  },
+  {
+    "variant": "compact8",
+    "scenario": "history_dense",
+    "columns": 160,
+    "retained_rows": 1040,
+    "visible_rows": 40,
+    "scrolls": 500,
+    "capacity_bytes": {
+      "after_ascii_replacement": 6945792,
+      "after_trim": 5614592,
+      "filled_grid": 6883200,
+      "repack_peak_grid": 8368128,
+      "snapshot_full": 146560,
+      "two_frames_one_changed_row": 149512,
+      "two_unchanged_frames": 146880
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 83254,
+        "requested_capacity_bytes": 11078720
+      },
+      "repack_roundtrip": {
+        "container_growths": 109,
+        "requested_capacity_bytes": 2846848
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 361,
+        "requested_capacity_bytes": 186880
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 2952
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 83200,
+    "checksum": "5e4e8c8368963c65",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 2008208.0,
+        "min": 1981917,
+        "max": 2230209
+      },
+      "repack_roundtrip": {
+        "median": 567021.0,
+        "min": 563500,
+        "max": 785667
+      },
+      "scroll_batch": {
+        "median": 499604.5,
+        "min": 472791,
+        "max": 516541
+      },
+      "snapshot_full": {
+        "median": 47958.0,
+        "min": 46500,
+        "max": 53584
+      },
+      "snapshot_one_changed_row": {
+        "median": 1333.0,
+        "min": 1208,
+        "max": 1458
+      },
+      "snapshot_unchanged": {
+        "median": 1125.0,
+        "min": 1000,
+        "max": 1292
+      },
+      "trim_free_text": {
+        "median": 633208.0,
+        "min": 627208,
+        "max": 642834
+      }
+    }
+  },
+  {
+    "variant": "compact16",
+    "scenario": "history_dense",
+    "columns": 160,
+    "retained_rows": 1040,
+    "visible_rows": 40,
+    "scrolls": 500,
+    "capacity_bytes": {
+      "after_ascii_replacement": 8338432,
+      "after_trim": 7007232,
+      "filled_grid": 8214400,
+      "repack_peak_grid": 11129344,
+      "snapshot_full": 146560,
+      "two_frames_one_changed_row": 149512,
+      "two_unchanged_frames": 146880
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 83254,
+        "requested_capacity_bytes": 12409920
+      },
+      "repack_roundtrip": {
+        "container_growths": 109,
+        "requested_capacity_bytes": 5608064
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 361,
+        "requested_capacity_bytes": 186880
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 2952
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 83200,
+    "checksum": "5e4e8c8368963c65",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 2032749.5,
+        "min": 2001333,
+        "max": 2063917
+      },
+      "repack_roundtrip": {
+        "median": 780479.5,
+        "min": 760292,
+        "max": 806458
+      },
+      "scroll_batch": {
+        "median": 538125.0,
+        "min": 514250,
+        "max": 578291
+      },
+      "snapshot_full": {
+        "median": 47145.5,
+        "min": 45416,
+        "max": 52333
+      },
+      "snapshot_one_changed_row": {
+        "median": 1333.0,
+        "min": 1166,
+        "max": 2500
+      },
+      "snapshot_unchanged": {
+        "median": 1145.5,
+        "min": 1042,
+        "max": 1333
+      },
+      "trim_free_text": {
+        "median": 635062.0,
+        "min": 627958,
+        "max": 656333
+      }
+    }
+  },
+  {
+    "variant": "baseline",
+    "scenario": "cluster_limit",
+    "columns": 80,
+    "retained_rows": 168,
+    "visible_rows": 40,
+    "scrolls": 200,
+    "capacity_bytes": {
+      "after_ascii_replacement": 549888,
+      "after_trim": 549888,
+      "filled_grid": 3990528,
+      "repack_peak_grid": 7953024,
+      "snapshot_full": 1365120,
+      "two_frames_one_changed_row": 1366792,
+      "two_unchanged_frames": 1365440
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 67375,
+        "requested_capacity_bytes": 7228224
+      },
+      "repack_roundtrip": {
+        "container_growths": 27399,
+        "requested_capacity_bytes": 7935744
+      },
+      "scroll_batch": {
+        "container_growths": 80200,
+        "requested_capacity_bytes": 8576000
+      },
+      "snapshot_full": {
+        "container_growths": 441,
+        "requested_capacity_bytes": 2666240
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 1672
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 0,
+    "checksum": "ddc81a745f65f845",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 3089291.5,
+        "min": 3022792,
+        "max": 3277750
+      },
+      "repack_roundtrip": {
+        "median": 1218999.5,
+        "min": 971333,
+        "max": 1396125
+      },
+      "scroll_batch": {
+        "median": 2954021.0,
+        "min": 2899667,
+        "max": 3109334
+      },
+      "snapshot_full": {
+        "median": 150895.5,
+        "min": 142292,
+        "max": 166167
+      },
+      "snapshot_one_changed_row": {
+        "median": 917.0,
+        "min": 833,
+        "max": 1042
+      },
+      "snapshot_unchanged": {
+        "median": 854.5,
+        "min": 791,
+        "max": 1041
+      },
+      "trim_free_text": {
+        "median": 0.0,
+        "min": 0,
+        "max": 42
+      }
+    }
+  },
+  {
+    "variant": "compact8",
+    "scenario": "cluster_limit",
+    "columns": 80,
+    "retained_rows": 168,
+    "visible_rows": 40,
+    "scrolls": 200,
+    "capacity_bytes": {
+      "after_ascii_replacement": 4092608,
+      "after_trim": 651968,
+      "filled_grid": 4076672,
+      "repack_peak_grid": 4228160,
+      "snapshot_full": 1365120,
+      "two_frames_one_changed_row": 1366792,
+      "two_unchanged_frames": 1365440
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 13460,
+        "requested_capacity_bytes": 4600832
+      },
+      "repack_roundtrip": {
+        "container_growths": 21,
+        "requested_capacity_bytes": 263424
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 441,
+        "requested_capacity_bytes": 2666240
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 1672
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 13440,
+    "checksum": "ddc81a745f65f845",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 550625.0,
+        "min": 528125,
+        "max": 601292
+      },
+      "repack_roundtrip": {
+        "median": 92021.0,
+        "min": 88459,
+        "max": 112791
+      },
+      "scroll_batch": {
+        "median": 200833.5,
+        "min": 198667,
+        "max": 970583
+      },
+      "snapshot_full": {
+        "median": 148354.5,
+        "min": 140917,
+        "max": 181708
+      },
+      "snapshot_one_changed_row": {
+        "median": 1208.0,
+        "min": 1042,
+        "max": 1334
+      },
+      "snapshot_unchanged": {
+        "median": 1167.0,
+        "min": 1041,
+        "max": 1291
+      },
+      "trim_free_text": {
+        "median": 127749.5,
+        "min": 127042,
+        "max": 135166
+      }
+    }
+  },
+  {
+    "variant": "compact16",
+    "scenario": "cluster_limit",
+    "columns": 80,
+    "retained_rows": 168,
+    "visible_rows": 40,
+    "scrolls": 200,
+    "capacity_bytes": {
+      "after_ascii_replacement": 4215488,
+      "after_trim": 774848,
+      "filled_grid": 4184192,
+      "repack_peak_grid": 4476992,
+      "snapshot_full": 1365120,
+      "two_frames_one_changed_row": 1366792,
+      "two_unchanged_frames": 1365440
+    },
+    "allocations": {
+      "fill": {
+        "container_growths": 13460,
+        "requested_capacity_bytes": 4708352
+      },
+      "repack_roundtrip": {
+        "container_growths": 21,
+        "requested_capacity_bytes": 512256
+      },
+      "scroll_batch": {
+        "container_growths": 0,
+        "requested_capacity_bytes": 0
+      },
+      "snapshot_full": {
+        "container_growths": 441,
+        "requested_capacity_bytes": 2666240
+      },
+      "snapshot_one_changed_row": {
+        "container_growths": 3,
+        "requested_capacity_bytes": 1672
+      },
+      "snapshot_unchanged": {
+        "container_growths": 1,
+        "requested_capacity_bytes": 320
+      }
+    },
+    "layout": {
+      "baseline_cell": 40,
+      "cell16": 16,
+      "cell8": 8,
+      "current_engine_cell": 40,
+      "current_engine_row": 32,
+      "deep_row": 48,
+      "row_metadata": 24,
+      "snapshot_cell": 16
+    },
+    "arena_slots_after_scroll": 13440,
+    "checksum": "ddc81a745f65f845",
+    "samples": 30,
+    "timings_ns": {
+      "fill": {
+        "median": 554688.0,
+        "min": 539166,
+        "max": 594250
+      },
+      "repack_roundtrip": {
+        "median": 96750.0,
+        "min": 94833,
+        "max": 110916
+      },
+      "scroll_batch": {
+        "median": 202291.5,
+        "min": 199833,
+        "max": 230000
+      },
+      "snapshot_full": {
+        "median": 146979.0,
+        "min": 141375,
+        "max": 167167
+      },
+      "snapshot_one_changed_row": {
+        "median": 1167.0,
+        "min": 1042,
+        "max": 1334
+      },
+      "snapshot_unchanged": {
+        "median": 1125.0,
+        "min": 1042,
+        "max": 1250
+      },
+      "trim_free_text": {
+        "median": 127562.5,
+        "min": 127041,
+        "max": 141583
+      }
+    }
+  }
+]

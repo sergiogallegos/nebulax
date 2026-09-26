@@ -1,0 +1,8 @@
+{
+  "collected_utc": "2026-09-26T22:15:11.755436+00:00",
+  "timing": "read after measurement; original sandbox metadata remains unchanged",
+  "command": "sysctl -n machdep.cpu.brand_string hw.memsize",
+  "cpu": "Apple M2 Pro",
+  "ram_bytes": 17179869184,
+  "reason": "read-only sysctl metadata required sandbox escalation"
+}

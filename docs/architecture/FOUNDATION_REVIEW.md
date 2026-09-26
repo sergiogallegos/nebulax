@@ -2,6 +2,8 @@
 
 Reviewed 2026-09-26 against the owner-provided Opus architecture feedback and current source. The high-level direction remains accepted. The sequencing recommendation is sound: validate the engine's consumers and boundaries before substantially expanding protocol coverage. This revises the previous SGR-first next task; it does not implement the changes below or declare new storage/ABI choices final.
 
+Follow-up: [ADR 0004](../adr/0004-cursor-anchored-resize.md) resolves the resize-rejection finding. The assessment below records the reviewed checkpoint; remaining work is tracked in NOW.
+
 ## Assessment
 
 | Feedback | Finding and follow-up |

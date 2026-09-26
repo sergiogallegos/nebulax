@@ -18,7 +18,7 @@ Verification checks formatting, Clippy, tests and reproducible replay. Known com
 
 The Alacritty baseline runs 19 fixtures through 244 replays: eight expectations match and eleven reviewed differences remain. See the [grapheme assessment](research/2026-09-26-grapheme-engine-assessment.md) and [initial experiment](research/2026-09-26-terminal-replay.md) for evidence and limits. The [executed Ghostty reference comparison](research/2026-09-26-ghostty-reference-comparison.md) matches all 19 expectations with explicit grapheme mode and informs the [first owned Rust slice](docs/architecture/OWNED_ENGINE_SLICE.md). These are correctness observations, not performance results or full terminal conformance.
 
-The [owned Rust engine](research/2026-09-26-history-screen-reflow.md) has **zero Cargo dependencies**. It matches all 19 existing fixtures over 244 replays and passes 853 official Unicode 18 grapheme cases. Broader protocols and an explicit primary-resize limitation remain open before native integration.
+The [owned Rust engine](research/2026-09-26-history-screen-reflow.md) has **zero Cargo dependencies**. It matches all 19 existing fixtures over 244 replays and passes 853 official Unicode 18 grapheme cases. [Valid-geometry resize now succeeds](docs/adr/0004-cursor-anchored-resize.md) with explicit crop/eviction reporting. Storage, protocol and native-integration work remain open.
 
 ## Project navigation
 
@@ -31,3 +31,5 @@ The [owned Rust engine](research/2026-09-26-history-screen-reflow.md) has **zero
 - [Contributing](CONTRIBUTING.md), [security](SECURITY.md), [governance](GOVERNANCE.md)
 
 Original code is [MIT licensed](LICENSE). Dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
+
+The [storage/snapshot experiment](research/2026-09-26-storage-snapshot-spike.md) compares compact cells and immutable snapshots with retained raw evidence. It informs the next integration design; the terminal core representation is unchanged.

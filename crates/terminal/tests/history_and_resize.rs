@@ -320,37 +320,290 @@ fn malformed_private_modes_do_not_trigger_screen_switching() {
 }
 
 #[test]
-fn primary_text_below_cursor_is_never_silently_cropped() {
+fn primary_crop_reports_loss_and_growth_does_not_restore_discarded_text() {
     let mut t = new(8, 2, 16, 128);
     t.feed(b"abcdefgh\x1b[7D");
-    let before = t.clone();
     assert_eq!(
         t.resize(Size {
             columns: 2,
             lines: 1
-        }),
-        Err(nebulax_terminal::Error::PrimaryContentWouldBeCropped)
+        })
+        .unwrap(),
+        ResizeOutcome {
+            history_evicted: 0,
+            cropped_rows: 3,
+            cropped_cells: 6
+        }
     );
-    assert_eq!(t, before);
-    // This constraint also protects inactive primary state behind a TUI.
-    t.feed(b"\x1b[?1049hTUI");
-    let before = t.clone();
+    assert_eq!(visible(&t), ["ab"]);
+    assert_eq!(t.cursor(), Cursor::default());
+    assert!(!t.screen()[0].soft_wrapped());
+    assert_eq!(t.resize(t.size()).unwrap(), ResizeOutcome::default());
     assert_eq!(
         t.resize(Size {
-            columns: 2,
-            lines: 1
-        }),
-        Err(nebulax_terminal::Error::PrimaryContentWouldBeCropped)
+            columns: 8,
+            lines: 2
+        })
+        .unwrap(),
+        ResizeOutcome::default()
     );
-    assert_eq!(t, before);
-    t.feed(b"\x1b[?1049l");
+    assert_eq!(logical(&t), ["ab"]);
+    t.feed(b"\r\nZ");
+    assert_eq!(logical(&t), ["ab", "Z"]);
     t.resize(Size {
         columns: 2,
-        lines: 4,
+        lines: 1,
     })
     .unwrap();
-    assert_eq!(logical(&t), ["abcdefgh"]);
+    assert_eq!(logical(&t), ["ab", "Z"]);
+}
+
+#[test]
+fn hidden_primary_crop_cannot_block_alternate_resize_or_partial_mode_input() {
+    let mut t = new(8, 2, 16, 128);
+    t.feed(b"abcdefgh\x1b[7D\x1b[?1049h");
+    t.feed("ab界\r\nxyz\u{1b}[?104".as_bytes());
+    assert_eq!(
+        t.resize(Size {
+            columns: 3,
+            lines: 1
+        })
+        .unwrap(),
+        ResizeOutcome {
+            history_evicted: 0,
+            cropped_rows: 3,
+            cropped_cells: 10
+        }
+    );
+    assert_eq!(
+        t.size(),
+        Size {
+            columns: 3,
+            lines: 1
+        }
+    );
+    assert!(t.is_alternate());
+    assert_eq!(visible(&t), ["ab"]);
+    assert!(t.history().is_empty());
+    assert!(t.invariants_hold());
+    t.feed(b"9l");
+    assert!(!t.is_alternate());
+    assert_eq!(visible(&t), ["abc"]);
     assert_eq!(t.cursor(), Cursor::default());
+    assert!(!t.screen()[0].soft_wrapped());
+    assert_eq!(
+        t.resize(Size {
+            columns: 8,
+            lines: 2
+        })
+        .unwrap(),
+        ResizeOutcome::default()
+    );
+    assert_eq!(logical(&t), ["abc"]);
+}
+
+#[test]
+fn primary_crop_removes_dangling_wide_padding_and_keeps_partial_utf8() {
+    let mut t = new(8, 2, 16, 128);
+    t.feed("ab界cd\r".as_bytes());
+    t.feed(&[0xf0, 0x9f]);
+    assert_eq!(
+        t.resize(Size {
+            columns: 3,
+            lines: 1
+        })
+        .unwrap(),
+        ResizeOutcome {
+            history_evicted: 0,
+            cropped_rows: 2,
+            cropped_cells: 4
+        }
+    );
+    assert_eq!(visible(&t), ["ab"]);
+    assert_eq!(t.screen()[0].cells()[2], Cell::Empty);
+    assert!(!t.screen()[0].soft_wrapped());
+    t.feed(&[0x91, 0xa9]);
+    assert_eq!(visible(&t), ["👩"]);
+    assert!(t.invariants_hold());
+    t.resize(Size {
+        columns: 8,
+        lines: 2,
+    })
+    .unwrap();
+    assert_eq!(logical(&t), ["👩"]);
+}
+
+#[test]
+fn primary_crop_and_history_eviction_are_counted_separately() {
+    for cap in [0, 1, 4] {
+        let mut t = new(8, 2, cap, 128);
+        t.feed(b"H\r\nabcdefgh\x1b[3D");
+        assert_eq!(
+            t.resize(Size {
+                columns: 2,
+                lines: 1
+            })
+            .unwrap(),
+            ResizeOutcome {
+                history_evicted: 3_usize.saturating_sub(cap),
+                cropped_rows: 1,
+                cropped_cells: 2
+            }
+        );
+        let expected_history = ["H", "ab", "cd"];
+        assert_eq!(history(&t), expected_history[3_usize.saturating_sub(cap)..]);
+        assert_eq!(visible(&t), ["ef"]);
+        assert_eq!(t.cursor(), Cursor::default());
+        assert!(!t.screen()[0].soft_wrapped());
+        assert!(t.invariants_hold());
+    }
+}
+
+#[test]
+fn height_only_crop_closes_primary_and_alternate_wraps() {
+    // A width change creates rows after the primary cursor without needing
+    // unsupported cursor-up controls. Then exercise height-only shrinking.
+    let mut t = new(8, 4, 16, 128);
+    t.feed(b"abcdefgh\r");
+    assert_eq!(
+        t.resize(Size {
+            columns: 2,
+            lines: 4
+        })
+        .unwrap(),
+        ResizeOutcome::default()
+    );
+    assert_eq!(
+        t.resize(Size {
+            columns: 2,
+            lines: 2
+        })
+        .unwrap(),
+        ResizeOutcome {
+            history_evicted: 0,
+            cropped_rows: 2,
+            cropped_cells: 4
+        }
+    );
+    assert_eq!(visible(&t), ["ab", "cd"]);
+    assert!(t.screen()[0].soft_wrapped());
+    assert!(!t.screen()[1].soft_wrapped());
+    t.feed(b"\x1b[?1049habcd!");
+    assert!(t.screen()[0].soft_wrapped());
+    assert_eq!(
+        t.resize(Size {
+            columns: 2,
+            lines: 1
+        })
+        .unwrap(),
+        ResizeOutcome {
+            history_evicted: 0,
+            cropped_rows: 2,
+            cropped_cells: 3
+        }
+    );
+    assert_eq!(visible(&t), ["cd"]);
+    assert!(!t.screen()[0].soft_wrapped());
+    t.feed(b"\x1b[?1049l");
+    assert_eq!(visible(&t), ["ab"]);
+    assert_eq!(logical(&t), ["ab"]);
+}
+
+#[test]
+fn cropped_spaces_and_multiscalar_wide_owners_have_exact_cell_counts() {
+    let mut t = new(8, 2, 16, 128);
+    t.feed("Ae\u{301} 👩‍💻 \r".as_bytes());
+    assert_eq!(
+        t.resize(Size {
+            columns: 2,
+            lines: 1
+        })
+        .unwrap(),
+        ResizeOutcome {
+            history_evicted: 0,
+            cropped_rows: 3,
+            cropped_cells: 4
+        }
+    );
+    assert_eq!(visible(&t), ["Ae\u{301}"]);
+    assert!(!t.screen()[0].soft_wrapped());
+    assert!(t.feed("\u{301}".as_bytes()).orphan_mark);
+    assert!(t.invariants_hold());
+}
+
+#[test]
+fn repeated_resize_of_hidden_primary_matches_visible_primary() {
+    let mut primary = new(8, 3, 1, 16);
+    primary.feed("old\r\nab界cdEF\r".as_bytes());
+    let mut hidden = primary.clone();
+    hidden.feed(b"\x1b[?1049hTUI");
+    for (columns, lines) in [(3, 1), (8, 4), (2, 1), (4, 2), (8, 3), (2, 1)] {
+        primary.resize(Size { columns, lines }).unwrap();
+        hidden.resize(Size { columns, lines }).unwrap();
+        assert!(hidden.is_alternate());
+        assert!(hidden.history().is_empty());
+        // Observe a copy so the actual sequence keeps the primary hidden.
+        let mut restored = hidden.clone();
+        restored.feed(b"\x1b[?1049l");
+        assert_eq!(restored.screen(), primary.screen());
+        assert_eq!(restored.history(), primary.history());
+        assert_eq!(restored.cursor(), primary.cursor());
+        assert!(hidden.invariants_hold());
+    }
+}
+
+#[test]
+fn all_small_ascii_geometries_follow_cursor_anchored_crop_and_history_policy() {
+    // Independent text/index oracle: no Screen or ReflowSink implementation.
+    for old_columns in 2..=12 {
+        let text: String = (0..old_columns).map(|i| (b'a' + i as u8) as char).collect();
+        for cursor in 0..old_columns - 1 {
+            for cap in [0, 1, 16] {
+                let mut original = new(old_columns, 2, cap, 128);
+                original.feed(text.as_bytes());
+                original.feed(format!("\x1b[{}D", old_columns - 1 - cursor).as_bytes());
+                for columns in 2..=12 {
+                    for lines in 1..=5 {
+                        let mut t = original.clone();
+                        let packed: Vec<_> = text
+                            .as_bytes()
+                            .chunks(columns)
+                            .map(|b| String::from_utf8(b.to_vec()).unwrap())
+                            .collect();
+                        let cursor_row = cursor / columns;
+                        let end = packed.len().min(cursor_row + lines);
+                        let start = end.saturating_sub(lines);
+                        let evicted = start.saturating_sub(cap);
+                        let out = t.resize(Size { columns, lines }).unwrap();
+                        assert_eq!(
+                            out,
+                            ResizeOutcome {
+                                history_evicted: evicted,
+                                cropped_rows: packed.len() - end,
+                                cropped_cells: old_columns.saturating_sub(end * columns),
+                            }
+                        );
+                        assert_eq!(history(&t), packed[evicted..start]);
+                        let mut expected = packed[start..end].to_vec();
+                        expected.resize(lines, String::new());
+                        assert_eq!(visible(&t), expected);
+                        assert_eq!(
+                            t.cursor(),
+                            Cursor {
+                                row: cursor_row - start,
+                                column: cursor % columns,
+                                wrap_pending: false
+                            }
+                        );
+                        assert!(t.invariants_hold());
+                        if out.cropped_rows > 0 {
+                            assert!(!t.screen()[lines - 1].soft_wrapped());
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[test]
@@ -395,7 +648,7 @@ fn mixed_feed_resize_and_screen_switches_are_byte_partition_equivalent() {
             columns: 2 + (seed as usize % 11),
             lines: 1 + ((seed >> 8) as usize % 5),
         };
-        assert_eq!(whole.resize(size), chunks.resize(size));
+        assert_eq!(whole.resize(size).unwrap(), chunks.resize(size).unwrap());
         assert_eq!(whole, chunks);
         assert!(whole.invariants_hold());
     }

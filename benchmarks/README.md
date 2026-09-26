@@ -1,6 +1,6 @@
 # Experiment artifacts and future benchmarks
 
-No throughput, footprint, energy, startup or physical latency benchmark has been run.
+An isolated synthetic storage/capacity experiment has run; no product/competitor throughput, RSS, energy, startup or physical latency benchmark has been run.
 
 The first [headless correctness report](results/p0-06-initial/replay.json) is stored with [environment metadata](results/p0-06-initial/environment.json), [source hashes](results/p0-06-initial/sources.json), [dependency checksums](results/p0-06-initial/dependencies.json) and [artifact hashes](results/p0-06-initial/artifacts.json). The synthetic input and expected states live in `tests/fixtures/terminal-replay.json`.
 
@@ -14,4 +14,8 @@ The [Ghostty mode-on reference](results/p0-06-ghostty/replay.json) matches 19/19
 
 The [owned Rust slice](results/p0-06-owned-slice/replay.json) records 14 matching fixtures / 166 replays and five visibly pending fixtures. Its environment records the empty core dependency tree, while the workspace inventory still includes research-only comparison dependencies.
 
-The [owned history/resize follow-up](results/p0-06-owned-history/replay.json) records all 19 matching fixtures / 244 replays, with zero deferrals and unchanged expectations. Its [source manifest](results/p0-06-owned-history/sources.json) identifies the current implementation; the preceding owned-slice result remains historical evidence. See [findings and limits](../research/2026-09-26-history-screen-reflow.md).
+The [owned history/resize follow-up](results/p0-06-owned-history/replay.json) records all 19 matching fixtures / 244 replays, with zero deferrals and unchanged expectations. Its [source manifest](results/p0-06-owned-history/sources.json) identifies that implementation; the preceding owned-slice result remains historical evidence. See [findings and limits](../research/2026-09-26-history-screen-reflow.md).
+
+The [successful-resize follow-up](results/p0-06-owned-resize/replay.json) preserves all 19 matches / 244 replays with unchanged expectations. Its [source manifest](results/p0-06-owned-resize/sources.json) includes the revised crop policy and regression tests; [ADR 0004](../docs/adr/0004-cursor-anchored-resize.md) explains the evidence and tradeoff.
+
+The [storage/snapshot experiment](results/p0-07-storage/summary.json) records 450 measured samples plus 45 warmups for three layouts and five workloads. [Raw samples](results/p0-07-storage/samples.jsonl), [environment](results/p0-07-storage/environment.json) and [findings](../research/2026-09-26-storage-snapshot-spike.md) distinguish owned-capacity accounting and exploratory operation timings from process/product performance. Run `scripts/storage-spike` serially; it is deliberately outside routine CI verification.

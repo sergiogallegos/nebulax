@@ -98,6 +98,9 @@ impl Screen {
             column: self.cursor.column.min(size.columns - 1),
             wrap_pending: self.cursor.wrap_pending && self.cursor.column + 1 == size.columns,
         };
+        if outcome.cropped_rows != 0 {
+            result.rows.last_mut().unwrap().soft_wrapped = false;
+        }
         (result, outcome)
     }
 
@@ -285,6 +288,15 @@ impl ReflowSink {
     }
 
     fn finish(mut self) -> (Screen, ResizeOutcome) {
+        // The retained suffix ends here: it must not stay linked to discarded
+        // content or carry padding whose wide owner was in that content.
+        if self.outcome.cropped_rows != 0 {
+            let last = self.rows.back_mut().unwrap();
+            last.soft_wrapped = false;
+            if last.cells.last() == Some(&Cell::WrapPadding) {
+                *last.cells.last_mut().unwrap() = Cell::Empty;
+            }
+        }
         let mut cursor = self
             .cursor
             .expect("cursor line always participates in reflow");
@@ -321,5 +333,64 @@ impl ReflowSink {
             },
             self.outcome,
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{Terminal, WidthPolicy};
+
+    #[test]
+    fn hard_rows_below_cursor_are_cropped_without_reordering_into_history() {
+        let mut t = Terminal::new(
+            Size {
+                columns: 4,
+                lines: 4,
+            },
+            Limits::default(),
+            WidthPolicy::default(),
+        )
+        .unwrap();
+        t.feed(b"aa\r\n\r\nbb\r\ncc");
+        // Set the cursor directly: cursor-up is deliberately outside the parser's
+        // current subset, but resize must support this valid screen state.
+        t.active.cursor = Cursor {
+            row: 1,
+            column: 0,
+            wrap_pending: false,
+        };
+        let out = t
+            .resize(Size {
+                columns: 4,
+                lines: 1,
+            })
+            .unwrap();
+        assert_eq!(
+            out,
+            ResizeOutcome {
+                history_evicted: 0,
+                cropped_rows: 2,
+                cropped_cells: 4
+            }
+        );
+        assert_eq!(t.history().len(), 1);
+        assert!(!t.history()[0].soft_wrapped());
+        assert!(t.screen()[0].cells().iter().all(|c| *c == Cell::Empty));
+        assert_eq!(t.cursor(), Cursor::default());
+        t.resize(Size {
+            columns: 8,
+            lines: 4,
+        })
+        .unwrap();
+        assert!(matches!(t.screen()[0].cells()[0], Cell::Lead { .. }));
+        assert!(!t.screen()[0].soft_wrapped());
+        assert!(
+            t.screen()[1..]
+                .iter()
+                .flat_map(Row::cells)
+                .all(|c| *c == Cell::Empty)
+        );
+        assert!(t.invariants_hold());
     }
 }
