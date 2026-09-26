@@ -229,12 +229,28 @@ dependencies = [
 ]
 
 [[package]]
+name = "nebulax-native-bridge"
+version = "0.1.0"
+dependencies = [
+ "nebulax-pty-session",
+ "nebulax-terminal",
+]
+
+[[package]]
 name = "nebulax-owned-replay"
 version = "0.1.0"
 dependencies = [
  "nebulax-terminal",
  "serde_json",
  "sha2",
+]
+
+[[package]]
+name = "nebulax-pty-session"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "nebulax-terminal",
 ]
 
 [[package]]

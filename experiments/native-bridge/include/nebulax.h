@@ -1,0 +1,60 @@
+#ifndef NEBULAX_PRIVATE_H
+#define NEBULAX_PRIVATE_H
+#include <stddef.h>
+#include <stdint.h>
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* Private ABI v1, macOS only. All functions return status, except version.
+ * Caller storage: readable inputs, writable aligned outputs, no aliasing or
+ * concurrent mutation during a call. Outputs are unchanged on nonzero status.
+ * UTF-8 command strings: no NUL, <=4096 bytes each, <=16 args, <=16384 total.
+ * Commands are trusted native caller input; PTY output never invokes this API.
+ * No function waits for child cleanup. Short registry/mailbox locks are used.
+ * Unwinding Rust panics become NB_PANIC; invalid pointers/OOM/abort are not caught.
+ */
+enum { NB_OK=0, NB_INVALID=1, NB_LIMIT=2, NB_BUSY=3, NB_NO_FRAME=4, NB_FAILED=5, NB_PANIC=6 };
+enum { NB_STARTING=0, NB_RUNNING=1, NB_EXITED=2, NB_STOPPED=3, NB_SESSION_FAILED=4 };
+typedef struct { const uint8_t *data; size_t len; } NbBytes;
+typedef struct {
+    uint32_t phase;
+    int32_t exit_code;
+    uint32_t failure, finished;
+    uint64_t denied_effects;
+} NbStatus;
+typedef struct { uint32_t text_offset; uint16_t text_len; uint8_t width, kind; } NbCell;
+typedef struct {
+    uint64_t generation;
+    uint32_t columns, lines, cursor_row, cursor_column, wrap_pending, alternate;
+    const NbCell *cells;
+    size_t cell_count;
+    const uint8_t *text;
+    size_t text_len;
+    const uint64_t *row_versions;
+    const uint8_t *row_wraps;
+    size_t row_count;
+} NbFrame;
+uint32_t nb_abi_version(void);
+int32_t nb_session_start(NbBytes executable, const NbBytes *args, size_t argc, uint32_t columns, uint32_t lines, uint64_t *out);
+int32_t nb_session_status(uint64_t session, NbStatus *out);
+/* Accepted resizes coalesce; failure to apply is reported as session failure. */
+int32_t nb_session_resize(uint64_t session, uint32_t columns, uint32_t lines);
+/* close requests cancellation. Poll status.finished; release is BUSY until true.
+ * Max 4 live session slots, including closing workers. Never reused handle IDs. */
+int32_t nb_session_close(uint64_t session);
+int32_t nb_session_release(uint64_t session);
+/* Max 2 acquired frames/session, 8 total. after_generation filters old frames.
+ * Latest frame replaces older mailbox frames. Compare row_versions against your
+ * last DISPLAYED frame, not against generation-1. Geometry changes redraw all.
+ * Frames remain readable after session release. Read-only pointers are valid
+ * until frame_release, which MUST NOT race their use. No engine lock is held.
+ * kind: 0 empty, 1 lead, 2 wide continuation, 3 wrap padding. Text is UTF-8.
+ * <=2 MiB cell/text/row payload per frame; no truncation on overflow.
+ */
+int32_t nb_frame_acquire(uint64_t session, uint64_t after_generation, uint64_t *out);
+int32_t nb_frame_view(uint64_t frame, NbFrame *out);
+int32_t nb_frame_release(uint64_t frame);
+#ifdef __cplusplus
+}
+#endif
+#endif

@@ -1,0 +1,94 @@
+#!/usr/bin/env python3
+"""Compile and execute the private C and Swift ABI lifetime smoke checks on macOS."""
+import argparse
+from datetime import datetime, timezone
+import hashlib
+from pathlib import Path
+import re
+import runpy
+import json
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+LOG = []
+
+
+def run(command):
+    result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    LOG.append({"command": command, "exit_code": result.returncode,
+                "stdout": result.stdout, "stderr": result.stderr})
+    if result.returncode:
+        print(result.stdout + result.stderr, file=sys.stderr)
+        result.check_returncode()
+    return result
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write(path, value):
+    path.write_text(json.dumps(value, indent=2) + "\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, help="New evidence directory; also records Rust snapshot/worker/bridge tests")
+    args = parser.parse_args()
+    if sys.platform != "darwin":
+        if args.output:
+            parser.error("native evidence recording requires macOS")
+        print("Native C/Swift bridge checks require macOS (portable Rust checks run separately).")
+        return
+    shared = runpy.run_path(str(ROOT / "scripts/replay"))
+    started = datetime.now(timezone.utc)
+    sources = shared["source_manifest"]() if args.output else None
+    if args.output:
+        args.output.mkdir(parents=True, exist_ok=False)
+    out = ROOT / "target/native-bridge"
+    out.mkdir(parents=True, exist_ok=True)
+    metadata = json.loads(subprocess.check_output(["cargo", "metadata", "--no-deps", "--locked", "--format-version=1"], cwd=ROOT))
+    library = Path(metadata["target_directory"]) / "debug"
+    run(["cargo", "build", "-p", "nebulax-native-bridge", "--locked"])
+    header = ROOT / "experiments/native-bridge/include/nebulax.h"
+    common = ["-L", str(library), "-lnebulax_native_bridge"]
+    run(["xcrun", "clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-I", str(header.parent),
+         "experiments/native-bridge/tests/abi.c", *common, f"-Wl,-rpath,{library}", "-o", str(out / "abi")])
+    c_result = run([str(out / "abi")])
+    print(c_result.stdout.strip())
+    # Keep module cache inside the workspace, including in a sandboxed session.
+    run(["xcrun", "swiftc", "-swift-version", "6", "-warnings-as-errors", "-module-cache-path", str(out / "module-cache"),
+         "-import-objc-header", str(header), "experiments/native-bridge/tests/lifetime.swift", *common,
+         "-Xlinker", "-rpath", "-Xlinker", str(library), "-o", str(out / "lifetime")])
+    swift_result = run([str(out / "lifetime"), sys.executable, str(ROOT / "experiments/pty-session/tests/child.py")])
+    print(swift_result.stdout.strip())
+    if args.output:
+        result = run(["cargo", "test", "-p", "nebulax-terminal", "-p", "nebulax-pty-session", "-p", "nebulax-native-bridge", "--locked", "--", "--test-threads=1"])
+        totals = re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored", result.stdout)
+        passed = sum(int(p) for p, _, _ in totals)
+        stable = sources == shared["source_manifest"]()
+        success = passed == 70 and stable and all(f == i == "0" for _, f, i in totals)
+        write(args.output / "commands.json", LOG)
+        write(args.output / "sources.json", sources)
+        write(args.output / "summary.json", {"schema_version": 1, "kind": "snapshot_worker_ffi_correctness_not_performance",
+              "success": success, "rust_tests_passed": passed, "expected_rust_tests": 70, "c_smoke_passed": True, "swift_smoke_passed": True,
+              "sources_unchanged_during_run": stable, "limits": ["no GUI, renderer or keyboard encoder", "snapshot damage computed by visible-row comparison", "2 ms worker cadence is not a performance result"]})
+        read = shared["run"]
+        write(args.output / "environment.json", {"started_utc": started.isoformat(), "finished_utc": datetime.now(timezone.utc).isoformat(),
+              "git_commit": read(["git", "rev-parse", "HEAD"]).stdout.strip(), "git_dirty": bool(read(["git", "status", "--porcelain"]).stdout),
+              "rustc": read(["rustc", "-Vv"]).stdout.strip(), "swift": read(["xcrun", "swiftc", "--version"]).stdout.strip(),
+              "macos": read(["sw_vers"]).stdout.strip(), "xcode": read(["xcodebuild", "-version"]).stdout.strip(),
+              "sdk": read(["xcrun", "--sdk", "macosx", "--show-sdk-version"]).stdout.strip(), "python": sys.version.split()[0],
+              "native_binary_sha256": {"bridge_dylib": digest(library / "libnebulax_native_bridge.dylib"), "c_smoke": digest(out / "abi"), "swift_smoke": digest(out / "lifetime")},
+              "bridge_dependencies": read(["cargo", "tree", "--locked", "-p", "nebulax-native-bridge"]).stdout.strip()})
+        write(args.output / "artifacts.json", {p.name: digest(p) for p in sorted(args.output.iterdir()) if p.is_file()})
+        if not success:
+            raise RuntimeError("native evidence count or source stability mismatch")
+        print(f"Retained {passed} Rust tests plus C/Swift checks: {args.output}")
+
+
+if __name__ == "__main__":
+    main()

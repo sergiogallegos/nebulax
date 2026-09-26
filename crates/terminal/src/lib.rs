@@ -1,13 +1,18 @@
 //! Owned terminal-state research slice. No I/O, async runtime or dependencies.
 //! Bounded primary history, alternate screen and grapheme-preserving reflow.
 mod decoder;
-mod parser;
+pub mod output;
+pub mod parser;
 mod screen;
+mod semantic;
+pub mod snapshot;
 mod tables;
 pub mod unicode;
 
 use decoder::Decoder;
-use parser::{Action, Parser};
+use output::Output;
+pub use output::{OutputEvent, TitleTarget};
+use parser::Parser;
 use screen::Screen;
 use std::collections::VecDeque;
 use unicode::GraphemeBreak;
@@ -140,9 +145,12 @@ pub struct ResizeOutcome {
     pub cropped_cells: usize,
 }
 
-/// Per-call flags aggregate diagnostics without allocating an event queue.
+/// Per-call progress and diagnostics. Resume at `bytes[consumed..]` after draining
+/// output if `output_blocked` is true. A completed event is never silently lost.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct FeedOutcome {
+    pub consumed: usize,
+    pub output_blocked: bool,
     pub changed: bool,
     pub unsupported: bool,
     pub parser_limit: bool,
@@ -154,6 +162,8 @@ pub struct FeedOutcome {
 
 impl FeedOutcome {
     pub fn merge(&mut self, other: Self) {
+        self.consumed += other.consumed;
+        self.output_blocked = other.output_blocked;
         self.changed |= other.changed;
         self.unsupported |= other.unsupported;
         self.parser_limit |= other.parser_limit;
@@ -173,6 +183,7 @@ pub struct Terminal {
     saved_primary: Option<Screen>,
     decoder: Decoder,
     parser: Parser,
+    output: Output,
     segmenter: GraphemeBreak,
     last_lead: Option<(usize, usize)>,
 }
@@ -202,7 +213,8 @@ impl Terminal {
             active: Screen::new(size),
             saved_primary: None,
             decoder: Decoder::default(),
-            parser: Parser::Ground,
+            parser: Parser::default(),
+            output: Output::default(),
             segmenter: GraphemeBreak::default(),
             last_lead: None,
         })
@@ -284,104 +296,65 @@ impl Terminal {
         Ok(out)
     }
 
+    /// Consume a prefix, stopping immediately if a completed output event waits
+    /// for capacity. Drain `pop_output`, then resume the unconsumed suffix.
     pub fn feed(&mut self, bytes: &[u8]) -> FeedOutcome {
         let mut result = FeedOutcome::default();
-        for &byte in bytes {
-            if self.parser != Parser::Ground {
-                let action = self.parser.push(byte);
-                self.action(action, &mut result);
-            } else {
-                for c in self.decoder.push(byte).into_iter().flatten() {
-                    if c.is_ascii_control() || c == '\u{7f}' {
-                        self.end_cluster();
-                        let action = self.parser.push(c as u8);
-                        self.action(action, &mut result);
-                    } else if c.is_control() {
-                        self.end_cluster();
-                        result.unsupported = true;
-                    } else {
-                        self.print(c, &mut result);
-                    }
+        if !self.output.blocked() {
+            for &byte in bytes {
+                if let Some(event) = self.parser.push(byte) {
+                    self.dispatch(event, &mut result);
+                }
+                result.consumed += 1;
+                if self.output.blocked() {
+                    break;
                 }
             }
         }
+        result.output_blocked = self.output.blocked();
         debug_assert!(self.invariants_hold());
         result
     }
 
-    /// Explicit end of input; a feed boundary alone never flushes a partial scalar.
+    /// Explicit EOF. If output is blocked, drain it and retry: no decoder/parser
+    /// state is discarded until this completes without `output_blocked`.
     pub fn finish(&mut self) -> FeedOutcome {
         let mut result = FeedOutcome::default();
-        if let Some(c) = self.decoder.finish() {
-            self.print(c, &mut result);
+        if self.output.blocked() {
+            result.output_blocked = true;
+            return result;
         }
-        if self.parser != Parser::Ground {
+        self.flush_decoder(&mut result);
+        if !self.parser.is_ground() {
             result.unsupported = true;
         }
-        self.parser = Parser::Ground;
+        self.parser.reset();
         self.end_cluster();
         result
+    }
+
+    /// Removes the oldest inert event and promotes a waiting event if it fits.
+    /// The caller owns policy checks and PTY writes, including partial writes.
+    pub fn pop_output(&mut self) -> Option<OutputEvent> {
+        self.output.pop()
+    }
+    /// Includes the one completed event waiting outside a full queue.
+    pub fn pending_output_len(&self) -> usize {
+        self.output.len()
+    }
+    pub fn pending_output_bytes(&self) -> usize {
+        self.output.bytes()
+    }
+
+    fn flush_decoder(&mut self, out: &mut FeedOutcome) {
+        if let Some(c) = self.decoder.finish() {
+            self.print(c, out);
+        }
     }
 
     fn end_cluster(&mut self) {
         self.last_lead = None;
         self.segmenter = GraphemeBreak::default();
-    }
-
-    fn action(&mut self, action: Action, out: &mut FeedOutcome) {
-        match action {
-            Action::Alternate(enable) => self.alternate(enable, out),
-            Action::None => {}
-            Action::Unsupported => out.unsupported = true,
-            Action::Limit => out.parser_limit = true,
-            Action::Control(b) => {
-                self.end_cluster();
-                match b {
-                    b'\r' => {
-                        self.active.cursor.column = 0;
-                        self.active.cursor.wrap_pending = false;
-                        out.changed = true;
-                    }
-                    b'\n' => {
-                        self.active.rows[self.active.cursor.row].soft_wrapped = false;
-                        self.down(out);
-                        self.active.cursor.wrap_pending = false;
-                    }
-                    8 => {
-                        self.active.cursor.column = self.active.cursor.column.saturating_sub(1);
-                        self.active.cursor.wrap_pending = false;
-                        out.changed = true;
-                    }
-                    0 => {}
-                    _ => out.unsupported = true,
-                }
-            }
-            Action::Left(n) => {
-                self.end_cluster();
-                self.active.cursor.column = self.active.cursor.column.saturating_sub(n);
-                self.active.cursor.wrap_pending = false;
-                out.changed = true;
-            }
-            Action::Erase(n) => {
-                self.end_cluster();
-                self.erase(
-                    self.active.cursor.row,
-                    self.active.cursor.column,
-                    (self.active.cursor.column + n).min(self.size.columns),
-                );
-                out.changed = true;
-            }
-            Action::EraseLine => {
-                self.end_cluster();
-                self.erase(
-                    self.active.cursor.row,
-                    self.active.cursor.column,
-                    self.size.columns,
-                );
-                self.active.rows[self.active.cursor.row].soft_wrapped = false;
-                out.changed = true;
-            }
-        }
     }
 
     fn erase(&mut self, row: usize, start: usize, end: usize) {
@@ -515,7 +488,8 @@ impl Terminal {
 
     /// Check structural invariants without allocating; useful to replay/fuzz callers.
     pub fn invariants_hold(&self) -> bool {
-        if !self.active.valid(self.size, self.limits)
+        if !self.output.valid()
+            || !self.active.valid(self.size, self.limits)
             || (self.saved_primary.is_some() && !self.active.history.is_empty())
             || self
                 .saved_primary

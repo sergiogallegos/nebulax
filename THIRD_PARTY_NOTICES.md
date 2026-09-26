@@ -7,6 +7,7 @@ Original Nebulax code is MIT licensed. Dependencies keep their upstream licenses
 | alacritty_terminal | 0.26.0 | Apache-2.0 | Isolated Alacritty research baseline |
 | serde | 1.0.229 | MIT OR Apache-2.0 | Fixture/report serialization |
 | serde_json | 1.0.151 | MIT OR Apache-2.0 | JSON corpus and report |
+| libc | 0.2.189 | MIT OR Apache-2.0 | macOS PTY OS ABI bindings; already in the workspace lockfile |
 | sha2 | 0.11.0 | MIT OR Apache-2.0 | Fixture and observed-state fingerprints |
 
 `Cargo.lock` records resolved versions and registry checksums. `cargo metadata --locked --format-version 1` exposes package license metadata and manifest locations; `scripts/replay` also saves a dependency version/checksum inventory. Inspect exact package license/NOTICE files and include required texts before shipping any binary. Registry metadata alone is not a completed distribution-license audit. The current repository does not vendor dependency source or ship an application artifact.

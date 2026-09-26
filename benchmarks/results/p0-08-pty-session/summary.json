@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "kind": "pty_lifecycle_correctness_not_performance",
+  "passed": 11,
+  "expected": 11,
+  "success": true,
+  "os_specific_tests": 6,
+  "portable_transport_tests": 5,
+  "sources_unchanged_during_run": true,
+  "exit_code": 0,
+  "limits": [
+    "one direct child; no shell job-tree supervision",
+    "forced short writes/backpressure use a scripted transport",
+    "no GUI, input encoder or scheduler performance evidence"
+  ]
+}

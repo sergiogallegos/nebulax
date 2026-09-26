@@ -95,7 +95,17 @@ fn replay(f: &Value, delivery: (&str, usize)) -> Vec<Value> {
         let bytes = op["text"].as_str().unwrap().as_bytes();
         let mut outcome = FeedOutcome::default();
         let mut feed = |b: &[u8]| {
-            outcome.merge(t.feed(b));
+            let progress = t.feed(b);
+            assert_eq!(
+                progress.consumed,
+                b.len(),
+                "fixture feed must not leave an unread suffix"
+            );
+            assert!(
+                !progress.output_blocked && t.pending_output_len() == 0,
+                "unexpected fixture output"
+            );
+            outcome.merge(progress);
             assert!(t.invariants_hold());
         };
         match delivery {

@@ -1,0 +1,5 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src/lib.rs (target/debug/deps/nebulax_pty_session-b985675bfd1d6685)
+     Running tests/lifecycle.rs (target/debug/deps/lifecycle-4eeefab29daa0c99)
+     Running tests/pump.rs (target/debug/deps/pump-31d7041a99a12bef)
+   Doc-tests nebulax_pty_session

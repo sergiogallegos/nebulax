@@ -1,0 +1,31 @@
+
+running 1 test
+test os::tests::dropping_session_kills_and_reaps_its_direct_child ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 5 tests
+test eof_and_nonzero_exit_are_independent_and_tail_output_is_drained ... ok
+test failed_spawn_releases_handles_and_repeated_sessions_finish ... ok
+test invalid_resize_is_atomic_and_shutdown_reaps_is_idempotent ... ok
+test real_effect_pressure_releases_without_event_or_reply_loss ... ok
+test real_pty_roundtrip_controlling_terminal_resize_signal_and_eof ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.51s
+
+
+running 5 tests
+test blocked_partial_replies_resume_without_rereading_or_reordering ... ok
+test effect_pressure_stops_reads_and_preserves_every_event_in_a_flood ... ok
+test interrupted_and_would_block_reads_do_not_flush_partial_utf8_or_csi ... ok
+test would_block_after_each_partial_write_preserves_offset_and_effect_order ... ok
+test zero_or_failed_writes_are_errors_with_the_event_still_owned ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

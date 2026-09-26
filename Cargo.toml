@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/terminal", "experiments/terminal-replay", "experiments/owned-replay", "experiments/storage-spike"]
+members = ["crates/terminal", "experiments/terminal-replay", "experiments/owned-replay", "experiments/storage-spike", "experiments/pty-session", "experiments/native-bridge"]
 resolver = "3"
 
 [workspace.package]

@@ -1,0 +1,24 @@
+[package]
+name = "nebulax-native-bridge"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Private C snapshot and worker-lifetime experiment"
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[target.'cfg(target_os = "macos")'.dependencies]
+nebulax-terminal = { path = "../../crates/terminal" }
+nebulax-pty-session = { path = "../pty-session" }
+
+[lints.rust]
+unsafe_code = "deny"
+unsafe_op_in_unsafe_fn = "deny"
+
+[lints.clippy]
+all = "warn"
+undocumented_unsafe_blocks = "deny"

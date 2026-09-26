@@ -1,0 +1,24 @@
+[package]
+name = "nebulax-pty-session"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+description = "Bounded PTY lifecycle research with the owned terminal engine"
+
+[dependencies]
+nebulax-terminal = { path = "../../crates/terminal" }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+libc = "=0.2.189"
+
+# The sole exception is the private macOS OS-binding module.
+[lints.rust]
+unsafe_code = "deny"
+unsafe_op_in_unsafe_fn = "deny"
+
+[lints.clippy]
+all = "warn"
+undocumented_unsafe_blocks = "deny"

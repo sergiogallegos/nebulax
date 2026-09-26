@@ -18,7 +18,7 @@ Verification checks formatting, Clippy, tests and reproducible replay. Known com
 
 The Alacritty baseline runs 19 fixtures through 244 replays: eight expectations match and eleven reviewed differences remain. See the [grapheme assessment](research/2026-09-26-grapheme-engine-assessment.md) and [initial experiment](research/2026-09-26-terminal-replay.md) for evidence and limits. The [executed Ghostty reference comparison](research/2026-09-26-ghostty-reference-comparison.md) matches all 19 expectations with explicit grapheme mode and informs the [first owned Rust slice](docs/architecture/OWNED_ENGINE_SLICE.md). These are correctness observations, not performance results or full terminal conformance.
 
-The [owned Rust engine](research/2026-09-26-history-screen-reflow.md) has **zero Cargo dependencies**. It matches all 19 existing fixtures over 244 replays and passes 853 official Unicode 18 grapheme cases. [Valid-geometry resize now succeeds](docs/adr/0004-cursor-anchored-resize.md) with explicit crop/eviction reporting. Storage, protocol and native-integration work remain open.
+The [owned Rust engine](research/2026-09-26-history-screen-reflow.md) has **zero Cargo dependencies**. It matches all 19 existing fixtures over 244 replays and passes 853 official Unicode 18 grapheme cases. [Valid-geometry resize now succeeds](docs/adr/0004-cursor-anchored-resize.md) with explicit crop/eviction reporting. [Bounded syntax and typed replies/effects](docs/adr/0006-bounded-parser-and-output.md) are implemented. Storage migration, broader protocol coverage and native integration remain open.
 
 ## Project navigation
 
@@ -33,3 +33,7 @@ The [owned Rust engine](research/2026-09-26-history-screen-reflow.md) has **zero
 Original code is [MIT licensed](LICENSE). Dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).
 
 The [storage/snapshot experiment](research/2026-09-26-storage-snapshot-spike.md) compares compact cells and immutable snapshots with retained raw evidence. It informs the next integration design; the terminal core representation is unchanged.
+
+A [single-PTY lifecycle experiment](research/2026-09-26-pty-session.md) now connects the engine to a deterministic macOS child, testing replies, backpressure, resize and cleanup. This remains headless research; a native window and interactive input are next.
+
+The [owned snapshot and native boundary](research/2026-09-26-native-boundary.md) now has real C/Swift lifetime checks, bounded frame handles and worker-owned PTY cleanup. A minimal AppKit window and bounded basic input are next.
