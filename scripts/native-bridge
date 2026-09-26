@@ -70,11 +70,11 @@ def main():
         totals = re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored", result.stdout)
         passed = sum(int(p) for p, _, _ in totals)
         stable = sources == shared["source_manifest"]()
-        success = passed == 70 and stable and all(f == i == "0" for _, f, i in totals)
+        success = passed == 76 and stable and all(f == i == "0" for _, f, i in totals)
         write(args.output / "commands.json", LOG)
         write(args.output / "sources.json", sources)
         write(args.output / "summary.json", {"schema_version": 1, "kind": "snapshot_worker_ffi_correctness_not_performance",
-              "success": success, "rust_tests_passed": passed, "expected_rust_tests": 70, "c_smoke_passed": True, "swift_smoke_passed": True,
+              "success": success, "rust_tests_passed": passed, "expected_rust_tests": 76, "c_smoke_passed": True, "swift_smoke_passed": True,
               "sources_unchanged_during_run": stable, "limits": ["no GUI, renderer or keyboard encoder", "snapshot damage computed by visible-row comparison", "2 ms worker cadence is not a performance result"]})
         read = shared["run"]
         write(args.output / "environment.json", {"started_utc": started.isoformat(), "finished_utc": datetime.now(timezone.utc).isoformat(),

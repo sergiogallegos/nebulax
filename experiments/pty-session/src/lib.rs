@@ -1,4 +1,5 @@
 //! Single-owner bounded PTY integration experiment, not a product runtime.
+pub mod input;
 mod pump;
 pub use pump::{Pump, READ_CAPACITY, Step, Transport};
 

@@ -25,3 +25,5 @@ The [parser/output follow-up](results/p0-06-owned-parser-output/replay.json) pre
 The [PTY lifecycle run](results/p0-08-pty-session/summary.json) retains eleven tests (six real macOS lifecycle/cleanup and five portable transport tests), raw logs, source/executable hashes and dependency trees. [Findings](../research/2026-09-26-pty-session.md) distinguish actual PTY behavior from forced short-write tests; this is not a performance benchmark.
 
 The [native-boundary run](results/p0-09-native-boundary/summary.json) records 70 relevant Rust tests plus compiled C and Swift lifetime checks, raw commands, source hashes and native binary hashes. [Findings](../research/2026-09-26-native-boundary.md) distinguish the owned snapshot/worker contract from still-open rendering and performance work.
+
+The [native-window GUI run](results/p0-10-native-window/window.json) retains event/resize/close observations, a [rendered grid bitmap](results/p0-10-native-window/window.png), source/binary hashes and command metadata. This is native correctness evidence, not physical input latency or renderer performance.

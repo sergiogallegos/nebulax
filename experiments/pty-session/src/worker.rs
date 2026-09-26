@@ -1,5 +1,8 @@
 //! Single worker owns PTY/engine/reaping. Readers see only owned latest frames.
-use crate::{Session, Step};
+use crate::{
+    Session, Step,
+    input::{Input, InputError, InputQueue},
+};
 use nebulax_terminal::{Size, Terminal, snapshot::Snapshot};
 use std::io;
 use std::panic::{AssertUnwindSafe, catch_unwind};
@@ -33,6 +36,7 @@ struct Published {
     status: Status,
     latest: Option<Arc<Snapshot>>,
     resize: Option<Size>,
+    input: InputQueue,
 }
 struct Shared {
     stop: AtomicBool,
@@ -63,6 +67,7 @@ impl Worker {
                 },
                 latest: None,
                 resize: None,
+                input: InputQueue::default(),
             }),
         });
         let state = Arc::clone(&shared);
@@ -103,6 +108,17 @@ impl Worker {
         state.resize = Some(size);
         self.shared.wake.notify_one();
         true
+    }
+    pub fn input(&self, input: Input) -> Result<(), InputError> {
+        let mut state = self.shared.lock();
+        if self.shared.stop.load(Ordering::Acquire)
+            || !matches!(state.status.phase, Phase::Starting | Phase::Running)
+        {
+            return Err(InputError::Closed);
+        }
+        state.input.push(input)?;
+        self.shared.wake.notify_one();
+        Ok(())
     }
     pub fn close(&self) {
         let _guard = self.shared.lock();
@@ -149,6 +165,12 @@ fn run(command: Command, terminal: Terminal, state: &Shared) -> (Phase, i32, u32
         {
             return (Phase::Failed, -1, 3);
         }
+        if session.can_accept_input()
+            && let Some(input) = state.lock().input.pop()
+            && session.queue_input(input).is_err()
+        {
+            return (Phase::Failed, -1, 2);
+        }
         let mut denied = 0u64;
         let step = match session.tick(|_| {
             denied += 1;
@@ -183,7 +205,10 @@ fn run(command: Command, terminal: Terminal, state: &Shared) -> (Phase, i32, u32
         // Bounded prototype cadence, not final readiness scheduling. Control
         // predicate and condvar share the mutex to avoid lost resize/stop wakes.
         let guard = state.lock();
-        if guard.resize.is_none() && !state.stop.load(Ordering::Acquire) {
+        if guard.resize.is_none()
+            && (guard.input.is_empty() || !session.can_accept_input())
+            && !state.stop.load(Ordering::Acquire)
+        {
             drop(
                 state
                     .wake

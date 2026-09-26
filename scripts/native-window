@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+"""Build/run the AppKit preview; --check only compiles, --self-test runs a GUI test."""
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import runpy
+import json
+from pathlib import Path
+import subprocess
+import sys
+ROOT = Path(__file__).resolve().parent.parent
+
+
+LOG = []
+
+
+def run(command):
+    result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+    LOG.append({"command": command, "exit_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr})
+    if result.stdout:
+        print(result.stdout.strip(), flush=True)
+    if result.returncode:
+        print(result.stderr, file=sys.stderr)
+        result.check_returncode()
+    return result
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write(path, data):
+    path.write_text(json.dumps(data, indent=2) + "\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--self-test", action="store_true")
+    parser.add_argument("--shell", action="store_true", help="Clean Bash preview with TERM=dumb; no user startup/history")
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
+    if args.check and (args.self_test or args.shell or args.output):
+        parser.error("--check only compiles; use run options separately")
+    if args.output and not args.self_test:
+        parser.error("--output requires --self-test")
+    if args.self_test and args.shell:
+        parser.error("self-test uses the deterministic demo peer")
+    if sys.platform != "darwin":
+        print("AppKit preview requires macOS.")
+        return
+    shared = runpy.run_path(str(ROOT / "scripts/replay"))
+    sources = shared["source_manifest"]() if args.self_test else None
+    started = datetime.now(timezone.utc)
+    run(["cargo", "build", "-p", "nebulax-native-bridge", "--locked"])
+    meta = json.loads(subprocess.check_output(["cargo", "metadata", "--no-deps", "--locked", "--format-version=1"], cwd=ROOT))
+    library = Path(meta["target_directory"]) / "debug"
+    out = ROOT / "target/native-window"
+    out.mkdir(parents=True, exist_ok=True)
+    binary = out / "NebulaxPreview"
+    run(["xcrun", "swiftc", "-swift-version", "6", "-warnings-as-errors", "-module-cache-path", str(out / "module-cache"),
+         "-import-objc-header", str(ROOT / "experiments/native-bridge/include/nebulax.h"),
+         str(ROOT / "experiments/native-window/Preview.swift"), "-L", str(library), "-lnebulax_native_bridge",
+         "-Xlinker", "-rpath", "-Xlinker", str(library), "-o", str(binary)])
+    if args.check:
+        print(f"Built AppKit preview: {binary}")
+        return
+    command = [str(binary), "--python", sys.executable, "--peer", str(ROOT / "experiments/native-window/peer.py")]
+    if args.shell:
+        command += ["--shell"]
+    if args.self_test:
+        output = (args.output or out / "smoke").resolve()
+        output.mkdir(parents=True, exist_ok=False)
+        command += ["--self-test", "--output", str(output)]
+    run(command)
+    if args.self_test:
+        stable = sources == shared["source_manifest"]()
+        write(output / "sources.json", sources)
+        write(output / "commands.json", LOG)
+        read = shared["run"]
+        write(output / "environment.json", {
+            "started_utc": started.isoformat(), "finished_utc": datetime.now(timezone.utc).isoformat(),
+            "git_commit": read(["git", "rev-parse", "HEAD"]).stdout.strip(),
+            "git_dirty": bool(read(["git", "status", "--porcelain"]).stdout),
+            "rustc": read(["rustc", "-Vv"]).stdout.strip(), "swift": read(["xcrun", "swiftc", "--version"]).stdout.strip(),
+            "macos": read(["sw_vers"]).stdout.strip(), "xcode": read(["xcodebuild", "-version"]).stdout.strip(),
+            "python": sys.version.split()[0], "sources_unchanged_during_run": stable,
+            "preview_sha256": digest(binary), "bridge_sha256": digest(library / "libnebulax_native_bridge.dylib"),
+            "measurement_kind": "native_window_correctness_not_performance",
+            "image_scope": "AppKit grid view bitmap, not the desktop or window chrome",
+        })
+        write(output / "artifacts.json", {p.name: digest(p) for p in sorted(output.iterdir()) if p.is_file()})
+        if not stable:
+            raise RuntimeError("sources changed during native-window run")
+        print(f"Native window evidence: {output}")
+
+
+if __name__ == "__main__":
+    main()

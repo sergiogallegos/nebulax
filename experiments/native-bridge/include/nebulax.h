@@ -41,6 +41,14 @@ int32_t nb_session_status(uint64_t session, NbStatus *out);
 int32_t nb_session_resize(uint64_t session, uint32_t columns, uint32_t lines);
 /* close requests cancellation. Poll status.finished; release is BUSY until true.
  * Max 4 live session slots, including closing workers. Never reused handle IDs. */
+/* Native input only: valid non-control UTF-8 commits <=4096 bytes or basic keys.
+ * Atomic acceptance into <=64-event/16-KiB mailbox; NB_LIMIT means not accepted.
+ * Input may be abandoned by cancellation/exit; never interleaves partial replies.
+ * Keys: 1 return, 2 backspace, 3 tab, 4 escape, 5 up, 6 down, 7 left,
+ * 8 right, 9 home, 10 end, 11 delete; 32..63 encode C0 controls 0..31.
+ */
+int32_t nb_session_text(uint64_t session, NbBytes text);
+int32_t nb_session_key(uint64_t session, uint32_t key);
 int32_t nb_session_close(uint64_t session);
 int32_t nb_session_release(uint64_t session);
 /* Max 2 acquired frames/session, 8 total. after_generation filters old frames.

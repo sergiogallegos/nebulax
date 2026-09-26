@@ -256,6 +256,32 @@ pub extern "C" fn nb_frame_release(handle: u64) -> i32 {
     })
 }
 
+/// # Safety
+/// text.data must be readable for text.len bytes until return. UTF-8 is copied.
+// SAFETY: unique private ABI export matching the checked header.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nb_session_text(handle: u64, text: NbBytes) -> i32 {
+    boundary(|| {
+        // SAFETY: caller provides a readable buffer; string checks bounded length.
+        let text = unsafe { string(text) }?;
+        registry::global()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .input(handle, nebulax_pty_session::input::Input::Text(text))
+    })
+}
+// SAFETY: unique private ABI export matching the checked header.
+#[unsafe(no_mangle)]
+pub extern "C" fn nb_session_key(handle: u64, key: u32) -> i32 {
+    boundary(|| {
+        let key = nebulax_terminal::input::Key::from_code(key).ok_or(INVALID)?;
+        registry::global()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .input(handle, nebulax_pty_session::input::Input::Key(key))
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

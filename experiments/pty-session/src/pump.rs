@@ -26,6 +26,7 @@ pub struct Pump {
     end: usize,
     pending: Option<OutputEvent>,
     written: usize,
+    native_input: Option<crate::input::Input>,
     eof: bool,
     finished: bool,
     diagnostics: FeedOutcome,
@@ -40,11 +41,31 @@ impl Pump {
             end: 0,
             pending: None,
             written: 0,
+            native_input: None,
             eof: false,
             finished: false,
             diagnostics: FeedOutcome::default(),
             changed: true,
         }
+    }
+    pub fn can_accept_input(&self) -> bool {
+        self.native_input.is_none() && !self.eof
+    }
+    pub fn queue_input(
+        &mut self,
+        input: crate::input::Input,
+    ) -> Result<(), crate::input::InputError> {
+        if !input.valid() {
+            return Err(crate::input::InputError::Invalid);
+        }
+        if self.eof {
+            return Err(crate::input::InputError::Closed);
+        }
+        if self.native_input.is_some() {
+            return Err(crate::input::InputError::Full);
+        }
+        self.native_input = Some(input);
+        Ok(())
     }
     pub fn take_changed(&mut self) -> bool {
         std::mem::take(&mut self.changed)
@@ -64,6 +85,34 @@ impl Pump {
     pub fn is_finished(&self) -> bool {
         self.finished && self.pending.is_none() && self.terminal.pending_output_len() == 0
     }
+    // PTY echo can fill the output side while input is partially written. Drain
+    // bounded readable bytes without replacing the current write/offset, or the
+    // two sides can deadlock. Generated replies remain in the engine's bounded
+    // queue; if that fills, its consumed count naturally stops further reads.
+    fn read_while_write_blocked(&mut self, transport: &mut impl Transport) -> io::Result<Step> {
+        if self.start == self.end && !self.eof {
+            match transport.read(&mut self.input) {
+                Ok(n) => {
+                    self.start = 0;
+                    self.end = n;
+                    self.eof = n == 0;
+                }
+                Err(e) if e.kind() == io::ErrorKind::Interrupted => return Ok(Step::Yield),
+                Err(e) if e.kind() == io::ErrorKind::WouldBlock => return Ok(Step::WriteBlocked),
+                Err(e) => return Err(e),
+            }
+        }
+        if self.start < self.end {
+            let out = self.terminal.feed(&self.input[self.start..self.end]);
+            self.start += out.consumed;
+            self.changed |= out.changed;
+            self.diagnostics.merge(out);
+            if out.consumed > 0 {
+                return Ok(Step::Yield);
+            }
+        }
+        Ok(Step::WriteBlocked)
+    }
     /// At most 64 operations; transport must be nonblocking. A false effect
     /// result means no acceptance: the same owned event will be offered again.
     /// The caller must not apply an effect and then return false.
@@ -75,6 +124,19 @@ impl Pump {
         for _ in 0..TURN_OPERATIONS {
             if self.pending.is_none() {
                 self.pending = self.terminal.pop_output();
+                if self.pending.is_none()
+                    && let Some(input) = self.native_input.take()
+                {
+                    let bytes = match input {
+                        crate::input::Input::Text(text) => text.into_bytes(),
+                        crate::input::Input::Key(key) => {
+                            self.terminal.encode_key(key).expect("validated key")
+                        }
+                    };
+                    // A single writer/offset owns replies and native input alike.
+                    // Complete it before selecting any other event; no byte interleaving.
+                    self.pending = Some(OutputEvent::Reply(bytes));
+                }
                 self.written = 0;
             }
             if let Some(event) = &self.pending {
@@ -89,7 +151,7 @@ impl Pump {
                         }
                         Err(e) if e.kind() == io::ErrorKind::Interrupted => continue,
                         Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
-                            return Ok(Step::WriteBlocked);
+                            return self.read_while_write_blocked(transport);
                         }
                         Err(e) => return Err(e),
                     },

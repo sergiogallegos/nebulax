@@ -2,7 +2,7 @@
 
 Nebulax is a terminal-emulator project targeting macOS Apple Silicon first, with a Rust core and Swift/AppKit UI. The planned user command is `nebulaxterm`.
 
-**Current stage:** architecture approved; Phase 0A engine validation in progress, with owned grapheme/history/alternate-screen/reflow slices implemented. There is no terminal app to install yet. The owner selected an [owned Rust engine with minimal dependencies](docs/adr/0002-owned-rust-engine-and-dependency-policy.md). Engine internals, renderer and scheduler remain under evaluation.
+**Current stage:** architecture approved; Phase 0A engine validation in progress, with owned grapheme/history/alternate-screen/reflow slices implemented. A local AppKit preview is available; there is no packaged app to install yet. The owner selected an [owned Rust engine with minimal dependencies](docs/adr/0002-owned-rust-engine-and-dependency-policy.md). Engine internals, renderer and scheduler remain under evaluation.
 
 ## Run the research workspace
 
@@ -37,3 +37,5 @@ The [storage/snapshot experiment](research/2026-09-26-storage-snapshot-spike.md)
 A [single-PTY lifecycle experiment](research/2026-09-26-pty-session.md) now connects the engine to a deterministic macOS child, testing replies, backpressure, resize and cleanup. This remains headless research; a native window and interactive input are next.
 
 The [owned snapshot and native boundary](research/2026-09-26-native-boundary.md) now has real C/Swift lifetime checks, bounded frame handles and worker-owned PTY cleanup. A minimal AppKit window and bounded basic input are next.
+
+Run `scripts/native-window` for the [interactive AppKit preview](experiments/native-window/README.md), or `scripts/native-window --shell` for a clean basic-shell session. The native-event/resize/close test is recorded in the [window findings](research/2026-09-26-native-window.md); IME, accessibility and broad shell/TUI compatibility remain open.

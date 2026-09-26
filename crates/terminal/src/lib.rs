@@ -1,6 +1,7 @@
 //! Owned terminal-state research slice. No I/O, async runtime or dependencies.
 //! Bounded primary history, alternate screen and grapheme-preserving reflow.
 mod decoder;
+pub mod input;
 pub mod output;
 pub mod parser;
 mod screen;

@@ -92,3 +92,25 @@ fn effects_are_denied_without_running_native_actions_or_stalling_replies() {
     assert_eq!(w.status().denied_effects, 600);
     assert_eq!(w.latest(0).unwrap().text(), b"DONE");
 }
+
+#[test]
+fn worker_sends_native_text_and_keys_to_a_real_pty_peer() {
+    use nebulax_pty_session::input::Input;
+    use nebulax_terminal::input::Key;
+    let w = start(
+        "python3",
+        &[
+            "-c",
+            "import os,tty;tty.setraw(0);os.write(1,b'READY');data=b''\nwhile len(data)<7:data+=os.read(0,7-len(data))\nassert data=='界'.encode()+b'\\r\\x1b[A';os.write(1,b'INPUT OK')",
+        ],
+    );
+    wait(|| w.latest(0).is_some_and(|f| f.text().starts_with(b"READY")));
+    w.input(Input::Text("界".into())).unwrap();
+    w.input(Input::Key(Key::Enter)).unwrap();
+    w.input(Input::Key(Key::Up)).unwrap();
+    wait(|| w.is_finished());
+    assert_eq!(w.status().phase, Phase::Exited);
+    assert_eq!(w.status().exit_code, 0);
+    assert_eq!(w.latest(0).unwrap().text(), b"READYINPUT OK");
+    assert!(w.input(Input::Text("late".into())).is_err());
+}

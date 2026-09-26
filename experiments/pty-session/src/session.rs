@@ -26,6 +26,18 @@ impl Session {
     pub fn pump(&self) -> &Pump {
         &self.pump
     }
+    pub fn can_accept_input(&self) -> bool {
+        self.master.is_some() && self.status.is_none() && self.pump.can_accept_input()
+    }
+    pub fn queue_input(
+        &mut self,
+        input: crate::input::Input,
+    ) -> Result<(), crate::input::InputError> {
+        if self.master.is_none() || self.status.is_some() {
+            return Err(crate::input::InputError::Closed);
+        }
+        self.pump.queue_input(input)
+    }
     pub fn take_changed(&mut self) -> bool {
         self.pump.take_changed()
     }

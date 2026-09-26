@@ -1,3 +1,4 @@
+use nebulax_pty_session::input::{Input, InputError};
 use nebulax_pty_session::worker::{Status, Worker, valid_geometry};
 use nebulax_terminal::{Limits, Size, Terminal, WidthPolicy, snapshot::Snapshot};
 use std::process::Command;
@@ -84,6 +85,13 @@ impl Registry {
         } else {
             Err(BUSY)
         }
+    }
+    pub fn input(&self, id: u64, input: Input) -> Result<(), i32> {
+        self.worker(id)?.input(input).map_err(|e| match e {
+            InputError::Invalid => INVALID,
+            InputError::Full => LIMIT,
+            InputError::Closed => BUSY,
+        })
     }
     pub fn close(&self, id: u64) -> Result<(), i32> {
         self.worker(id)?.close();

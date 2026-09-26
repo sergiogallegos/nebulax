@@ -20,3 +20,5 @@ Current decisions live in [ADRs](../docs/adr/0001-approved-direction.md); resear
 - [PTY lifecycle experiment](2026-09-26-pty-session.md): one macOS child/engine round trip, eleven transport/lifecycle tests, bounded buffering and cleanup limits.
 
 - [Snapshot, worker and private C/Swift boundary](2026-09-26-native-boundary.md): owned frames, bounded handles, worker cleanup and native lifetime evidence.
+
+- [Native window and basic input](2026-09-26-native-window.md): AppKit/Core Text drawing, bounded full-duplex input, native-event GUI tests and the clean dumb-shell baseline.

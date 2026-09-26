@@ -239,3 +239,84 @@ fn would_block_after_each_partial_write_preserves_offset_and_effect_order() {
     assert_eq!(wire.output, expected);
     assert_eq!(bells, 1);
 }
+
+#[test]
+fn native_input_never_splits_a_reply_and_preserves_utf8_and_key_order() {
+    use nebulax_pty_session::input::{Input, InputError};
+    use nebulax_terminal::input::Key;
+    let mut wire = Wire::new(b"\x1b[5n");
+    wire.eof = false;
+    wire.write_budget = 1;
+    let mut pump = Pump::new(engine());
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::WriteBlocked);
+    assert_eq!(wire.output, b"\x1b");
+    pump.queue_input(Input::Text("界".into())).unwrap();
+    assert_eq!(pump.queue_input(Input::Key(Key::Up)), Err(InputError::Full));
+    let expected = b"\x1b[0n\xe7\x95\x8c\x1b[A";
+    let mut key_queued = false;
+    for n in 2..=expected.len() {
+        wire.write_budget = 1;
+        pump.step(&mut wire, |_| true).unwrap();
+        assert_eq!(wire.output, expected[..n]);
+        if !key_queued && pump.can_accept_input() {
+            // Enqueue another event during a partially written UTF-8 commit.
+            pump.queue_input(Input::Key(Key::Up)).unwrap();
+            key_queued = true;
+        }
+    }
+    assert!(key_queued);
+    wire.eof = true;
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::Finished);
+    assert_eq!(
+        pump.queue_input(Input::Text("late".into())),
+        Err(InputError::Closed)
+    );
+}
+
+#[test]
+fn bounded_echo_is_drained_during_a_partial_input_write_to_avoid_deadlock() {
+    use nebulax_pty_session::input::Input;
+    struct Echo {
+        readable: VecDeque<u8>,
+        written: Vec<u8>,
+    }
+    impl Read for Echo {
+        fn read(&mut self, out: &mut [u8]) -> io::Result<usize> {
+            if self.readable.is_empty() {
+                return Err(io::ErrorKind::WouldBlock.into());
+            }
+            let n = out.len().min(self.readable.len());
+            for byte in &mut out[..n] {
+                *byte = self.readable.pop_front().unwrap();
+            }
+            Ok(n)
+        }
+    }
+    impl Write for Echo {
+        fn write(&mut self, bytes: &[u8]) -> io::Result<usize> {
+            let n = bytes.len().min(4 - self.readable.len());
+            if n == 0 {
+                return Err(io::ErrorKind::WouldBlock.into());
+            }
+            self.readable.extend(&bytes[..n]);
+            self.written.extend_from_slice(&bytes[..n]);
+            Ok(n)
+        }
+        fn flush(&mut self) -> io::Result<()> {
+            Ok(())
+        }
+    }
+    let mut wire = Echo {
+        readable: VecDeque::new(),
+        written: Vec::new(),
+    };
+    let mut pump = Pump::new(engine());
+    pump.queue_input(Input::Text("abcdefghijklmnop".into()))
+        .unwrap();
+    for _ in 0..16 {
+        pump.step(&mut wire, |_| true).unwrap();
+    }
+    assert_eq!(wire.written, b"abcdefghijklmnop");
+    assert_eq!(text(&pump), "abcdefghijklmnop");
+    assert_eq!(pump.retained_event_bytes(), 0);
+}

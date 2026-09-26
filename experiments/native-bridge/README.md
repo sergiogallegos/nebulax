@@ -8,7 +8,7 @@ scripts/native-bridge --output target/native-bridge/evidence
 scripts/verify
 ```
 
-The first command builds and executes C layout/argument/lifetime checks and a Swift 6 PTY/resize/teardown check. `--output` additionally records 70 Rust tests across the core, PTY and bridge packages, exact sources, raw command results, native binary hashes and toolchains. Full workspace verification currently runs 85 Rust tests on macOS, plus these C/Swift checks. Non-macOS verification runs the portable Rust subset and explicitly skips the native smoke checks.
+The first command builds and executes C layout/argument/lifetime checks and a Swift 6 PTY/resize/teardown check. `--output` additionally records 76 Rust tests across the core, PTY and bridge packages, exact sources, raw command results, native binary hashes and toolchains. Full workspace verification currently runs 91 Rust tests on macOS, plus these C/Swift checks. Non-macOS verification runs the portable Rust subset and explicitly skips the native smoke checks.
 
 ## Native ownership contract
 
@@ -29,6 +29,6 @@ All input pointer lengths, validity and output ownership obligations are in the 
 
 The worker may hold its previous frame while building a candidate. Across four sessions and eight acquired handles, this bounds snapshot payload to at most 32 MiB; engine state, resize clones, worker stacks, metadata and allocator overhead are separate. These are logical payload bounds, not RSS measurements. Direct Rust users of `Snapshot`/`Worker` must bound their own retained values; the handle caps are enforced by this C bridge.
 
-Snapshots are copied from the authoritative visible grid with exact text sizing. Row versions are derived by content comparison, not engine edit-time dirty tracking. The 8-byte snapshot cell is a transfer format; it does not select the production grid layout or supersede the 16-byte storage candidate. Full-frame copy and a 2 ms idle worker cadence are prototype choices, not performance conclusions. No history export, styles, keyboard encoder, GUI, IME or accessibility API is included.
+Snapshots are copied from the authoritative visible grid with exact text sizing. Row versions are derived by content comparison, not engine edit-time dirty tracking. The 8-byte snapshot cell is a transfer format; it does not select the production grid layout or supersede the 16-byte storage candidate. Full-frame copy and a 2 ms idle worker cadence are prototype choices, not performance conclusions. History export and styles remain open. A basic key encoder and a separate AppKit preview now consume this bridge; IME/accessibility remain unimplemented.
 
-See [ADR 0008](../../docs/adr/0008-snapshot-worker-and-private-ffi.md), [findings](../../research/2026-09-26-native-boundary.md) and [retained evidence](../../benchmarks/results/p0-09-native-boundary/summary.json). Next connect the bounded frame lifecycle to a minimal AppKit view and basic input.
+See [ADR 0008](../../docs/adr/0008-snapshot-worker-and-private-ffi.md), [findings](../../research/2026-09-26-native-boundary.md) and [retained evidence](../../benchmarks/results/p0-09-native-boundary/summary.json). The [AppKit/basic-input preview](../native-window/README.md) now connects this frame lifecycle to a view. `nb_session_text/key` accept bounded native input; see [ADR 0009](../../docs/adr/0009-native-window-and-basic-input.md) for byte/event limits and partial-write ordering.

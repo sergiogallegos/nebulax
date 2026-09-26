@@ -36,3 +36,5 @@ The [owned replay adapter](../../experiments/owned-replay/README.md) matches all
 Twelve parser/output tests separately cover syntax boundaries, cancellation, malformed strings, typed output, count/payload pressure, exact resume and chunk-independent output order. The existing replay corpus remains a grid regression check, not coverage of these new protocols.
 
 `Snapshot::capture` exports a complete owned visible frame with a two-MiB cell/text/row payload limit. UTF-8, cell roles, row versions and cursor state survive engine mutation/destruction. Consumers compare row versions to their last displayed frame. This currently copies/compares visible rows and does not change core grid storage; see [ADR 0008](../../docs/adr/0008-snapshot-worker-and-private-ffi.md). The private C handle layer separately bounds retained frames.
+
+The `input` module supplies normal-profile basic-key/C0 encoding on the engine owner. Application-cursor/extended keyboard modes are not implemented; native callers submit key IDs rather than selecting escape sequences themselves.
