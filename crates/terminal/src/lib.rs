@@ -12,6 +12,7 @@ pub mod snapshot;
 pub mod storage;
 pub mod style;
 mod tables;
+mod tabs;
 pub mod unicode;
 
 use decoder::Decoder;
@@ -120,7 +121,7 @@ pub struct ResizeOutcome {
     /// Rows cropped below the retained primary viewport or alternate grid.
     pub cropped_rows: usize,
     /// Cropped occupied cells, counting both wide halves and printed spaces,
-    /// excluding empty cells and structural wrap padding.
+    /// including styled empty cells, excluding default empty cells and wrap padding.
     pub cropped_cells: usize,
 }
 
@@ -166,7 +167,9 @@ pub struct Terminal {
     parser: Parser,
     output: Output,
     application_cursor: bool,
+    cursor_visible: bool,
     styles: style::Styles,
+    tabs: tabs::Tabs,
     segmenter: GraphemeBreak,
     last_lead: Option<(usize, usize)>,
 }
@@ -199,7 +202,9 @@ impl Terminal {
             parser: Parser::default(),
             output: Output::default(),
             application_cursor: false,
+            cursor_visible: true,
             styles: style::Styles::default(),
+            tabs: tabs::Tabs::new(size.columns),
             segmenter: GraphemeBreak::default(),
             last_lead: None,
         })
@@ -276,6 +281,7 @@ impl Terminal {
         self.active = active;
         self.saved_primary = saved;
         self.size = size;
+        self.tabs.grow(size.columns);
         self.end_cluster();
         debug_assert!(self.invariants_hold());
         Ok(out)
@@ -362,12 +368,19 @@ impl Terminal {
         self.active.cursor.wrap_pending = false;
     }
 
+    pub fn autowrap(&self) -> bool {
+        self.active.autowrap
+    }
+    pub fn cursor_visible(&self) -> bool {
+        self.cursor_visible
+    }
+
     fn set_after(&mut self, row: usize, col: usize, width: u8) {
         let next = col + usize::from(width);
         self.active.cursor = Cursor {
             row,
             column: next.min(self.size.columns - 1),
-            wrap_pending: next == self.size.columns,
+            wrap_pending: self.active.autowrap && next == self.size.columns,
         };
     }
 
@@ -423,14 +436,20 @@ impl Terminal {
             self.wrap(out);
         }
         if width == 2 && self.active.cursor.column == self.size.columns - 1 {
-            self.erase(
-                self.active.cursor.row,
-                self.active.cursor.column,
-                self.size.columns,
-            );
-            self.active.rows[self.active.cursor.row].cells[self.active.cursor.column] =
-                Cell::WRAP_PADDING.with_style(cell.style_id());
-            self.wrap(out);
+            if self.active.autowrap {
+                self.erase(
+                    self.active.cursor.row,
+                    self.active.cursor.column,
+                    self.size.columns,
+                );
+                self.active.rows[self.active.cursor.row].cells[self.active.cursor.column] =
+                    Cell::WRAP_PADDING.with_style(cell.style_id());
+                self.wrap(out);
+            } else {
+                // Keep the complete wide owner on this physical row. A widening
+                // selector at the edge follows the same explicit clamp policy.
+                self.active.cursor.column = self.size.columns - 2;
+            }
         }
         let (row, col) = (self.active.cursor.row, self.active.cursor.column);
         self.erase(row, col, col + usize::from(width));
@@ -446,6 +465,9 @@ impl Terminal {
 
     /// Check structural invariants without allocating; useful to replay/fuzz callers.
     pub fn invariants_hold(&self) -> bool {
+        if !self.tabs.valid(self.size.columns) {
+            return false;
+        }
         if !self.output.valid()
             || !self.active.valid(self.size, self.limits)
             || (self.saved_primary.is_some() && !self.active.history.is_empty())

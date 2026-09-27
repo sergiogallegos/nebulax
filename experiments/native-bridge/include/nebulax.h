@@ -5,7 +5,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Private ABI v2, macOS only. All functions return status, except version.
+/* Private ABI v3, macOS only. All functions return status, except version.
  * Caller storage: readable inputs, writable aligned outputs, no aliasing or
  * concurrent mutation during a call. Outputs are unchanged on nonzero status.
  * UTF-8 command strings: no NUL, <=4096 bytes each, <=16 args, <=16384 total.
@@ -39,6 +39,7 @@ typedef struct {
     size_t row_count;
     const NbStyle *styles;
     size_t style_count;
+    uint32_t cursor_visible, reserved;
 } NbFrame;
 uint32_t nb_abi_version(void);
 int32_t nb_session_start(NbBytes executable, const NbBytes *args, size_t argc, uint32_t columns, uint32_t lines, uint64_t *out);
@@ -62,6 +63,8 @@ int32_t nb_session_release(uint64_t session);
  * last DISPLAYED frame, not against generation-1. Geometry changes redraw all.
  * Frames remain readable after session release. Read-only pointers are valid
  * until frame_release, which MUST NOT race their use. No engine lock is held.
+ * cursor_visible is 0/1; frame.reserved is zero. Cursor changes may leave
+ * row_versions unchanged; redraw the old/new cursor overlay independently.
  * Every cell.style_id is < style_count (<=1024); cell.reserved is zero.
  * kind: 0 empty, 1 lead, 2 wide continuation, 3 wrap padding. Text is UTF-8.
  * <=2 MiB cell/text/row/style payload per frame; no truncation on overflow.

@@ -13,7 +13,13 @@ enum Action {
     Index(bool),
     ReverseIndex,
     Erase(usize),
-    EraseLine,
+    EditCharacters(usize, bool),
+    EditLines(usize, bool),
+    EraseLine(u16),
+    EraseDisplay(u16),
+    Tab(usize, bool),
+    SetTab,
+    ClearTabs(bool),
     Query(u16),
     Rendition(Header),
     Unsupported,
@@ -31,7 +37,10 @@ fn csi(header: Header, final_byte: u8) -> Action {
     if header.prefix() == Some(b'?') && matches!(final_byte, b'h' | b'l') {
         // Validate the entire list before changing any mode. Unsupported lists
         // remain observable and cannot leave a partially applied command.
-        return if !params.is_empty() && params.iter().all(|p| matches!(p.value, Some(1 | 6 | 1049)))
+        return if !params.is_empty()
+            && params
+                .iter()
+                .all(|p| matches!(p.value, Some(1 | 6 | 7 | 25 | 1049)))
         {
             Modes(header, final_byte == b'h')
         } else {
@@ -68,7 +77,16 @@ fn csi(header: Header, final_byte: u8) -> Action {
         (_, b'G') => Position(None, Some(usize::from(n.max(1) - 1))),
         (_, b'd') => Position(Some(usize::from(n.max(1) - 1)), None),
         (_, b'X') => Erase(usize::from(n.max(1))),
-        (0, b'K') => EraseLine,
+        (_, b'@') => EditCharacters(usize::from(n.max(1)), true),
+        (_, b'P') => EditCharacters(usize::from(n.max(1)), false),
+        (_, b'L') => EditLines(usize::from(n.max(1)), true),
+        (_, b'M') => EditLines(usize::from(n.max(1)), false),
+        (mode @ 0..=2, b'K') => EraseLine(mode),
+        (mode @ 0..=3, b'J') => EraseDisplay(mode),
+        (_, b'I') => Tab(usize::from(n.max(1)), true),
+        (_, b'Z') => Tab(usize::from(n.max(1)), false),
+        (0, b'g') => ClearTabs(false),
+        (3, b'g') => ClearTabs(true),
         (n @ (5 | 6), b'n') => Query(n),
         _ => Unsupported,
     }
@@ -86,6 +104,7 @@ fn esc(header: Header, final_byte: u8) -> Action {
         b'D' => Action::Index(false),
         b'E' => Action::Index(true),
         b'M' => Action::ReverseIndex,
+        b'H' => Action::SetTab,
         _ => Action::Unsupported,
     }
 }
@@ -173,6 +192,15 @@ impl Terminal {
                             self.active.set_origin(enabled);
                             out.changed = true;
                         }
+                        7 => {
+                            self.active.autowrap = enabled;
+                            self.active.cursor.wrap_pending = false;
+                            out.changed = true;
+                        }
+                        25 => {
+                            out.changed |= self.cursor_visible != enabled;
+                            self.cursor_visible = enabled;
+                        }
                         1049 => self.alternate(enabled, out),
                         _ => unreachable!("validated mode list"),
                     }
@@ -203,6 +231,24 @@ impl Terminal {
             Action::Margins(top, bottom) => {
                 self.end_cluster();
                 out.changed |= self.active.set_margins(top, bottom);
+            }
+            Action::Tab(count, forward) => {
+                self.active.cursor.column = self.tabs.destination(
+                    self.active.cursor.column,
+                    self.size.columns,
+                    count,
+                    forward,
+                );
+                self.active.cursor.wrap_pending = false;
+                out.changed = true;
+            }
+            Action::SetTab => self.tabs.set(self.active.cursor.column, true),
+            Action::ClearTabs(all) => {
+                if all {
+                    self.tabs.clear();
+                } else {
+                    self.tabs.set(self.active.cursor.column, false);
+                }
             }
             Action::Save => {
                 self.end_cluster();
@@ -274,8 +320,19 @@ impl Terminal {
                         self.active.cursor.wrap_pending = false;
                         out.changed = true;
                     }
+                    b'\t' => self.apply_action(Action::Tab(1, true), out),
                     0 => {}
                     _ => out.unsupported = true,
+                }
+            }
+            Action::EditCharacters(count, insert) => {
+                self.active.edit_characters(count, insert);
+                out.changed = true;
+            }
+            Action::EditLines(count, insert) => {
+                if self.active.edit_lines(count, insert) {
+                    out.changed = true;
+                    out.scrolled_without_history = true;
                 }
             }
             Action::Erase(n) => {
@@ -287,14 +344,12 @@ impl Terminal {
                 );
                 out.changed = true;
             }
-            Action::EraseLine => {
-                self.end_cluster();
-                self.erase(
-                    self.active.cursor.row,
-                    self.active.cursor.column,
-                    self.size.columns,
-                );
-                self.active.rows[self.active.cursor.row].soft_wrapped = false;
+            Action::EraseLine(mode) => {
+                self.active.erase_line(self.active.cursor.row, mode);
+                out.changed = true;
+            }
+            Action::EraseDisplay(mode) => {
+                self.active.erase_display(mode);
                 out.changed = true;
             }
         }

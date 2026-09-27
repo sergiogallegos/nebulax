@@ -1,0 +1,16 @@
+{
+  "started_utc": "2026-09-27T17:35:54.581266+00:00",
+  "finished_utc": "2026-09-27T17:35:56.485221+00:00",
+  "git_commit": "0fceb551d6734595a5239e62760b122139193c5e",
+  "git_dirty": true,
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428",
+  "xcode": "Xcode 27.0\nBuild version 27A266a",
+  "python": "3.14.7",
+  "sources_unchanged_during_run": true,
+  "preview_sha256": "419224a98430fdfa8af10918ab77dee62662d07806fbf4bae52098b21ac9c709",
+  "bridge_sha256": "9a86db6e99f18e9b23bbdab1206cdf0b132b74fbb34b12a9d091804e18b7b571",
+  "measurement_kind": "native_window_correctness_not_performance",
+  "image_scope": "AppKit grid view bitmap, not the desktop or window chrome"
+}

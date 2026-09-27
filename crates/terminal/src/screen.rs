@@ -2,12 +2,25 @@
 use crate::{Cell, CellView, Cursor, FeedOutcome, Limits, ResizeOutcome, Row, Size};
 use std::collections::VecDeque;
 
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct SavedCursor {
     cursor: Cursor,
     origin: bool,
+    autowrap: bool,
     style: u16,
     erase_style: u16,
+}
+
+impl Default for SavedCursor {
+    fn default() -> Self {
+        Self {
+            cursor: Cursor::default(),
+            origin: false,
+            autowrap: true,
+            style: 0,
+            erase_style: 0,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -16,6 +29,7 @@ pub(crate) struct Screen {
     pub history: VecDeque<Row>,
     pub cursor: Cursor,
     pub origin: bool,
+    pub autowrap: bool,
     pub style: u16,
     pub erase_style: u16,
     pub top: usize,
@@ -30,6 +44,7 @@ impl Screen {
             history: VecDeque::new(),
             cursor: Cursor::default(),
             origin: false,
+            autowrap: true,
             style: 0,
             erase_style: 0,
             top: 0,
@@ -107,6 +122,7 @@ impl Screen {
         self.saved_cursor = SavedCursor {
             cursor: self.cursor,
             origin: self.origin,
+            autowrap: self.autowrap,
             style: self.style,
             erase_style: self.erase_style,
         };
@@ -114,6 +130,7 @@ impl Screen {
 
     pub fn restore_cursor(&mut self) {
         self.origin = self.saved_cursor.origin;
+        self.autowrap = self.saved_cursor.autowrap;
         self.style = self.saved_cursor.style;
         self.erase_style = self.saved_cursor.erase_style;
         self.cursor = self.saved_cursor.cursor;
@@ -126,6 +143,8 @@ impl Screen {
     // saved physical position. Only the active cursor participates in reflow.
     fn resized_state(&self, result: &mut Self, size: Size) {
         result.origin = self.origin;
+        result.autowrap = self.autowrap;
+        result.cursor.wrap_pending &= self.autowrap;
         result.style = self.style;
         result.erase_style = self.erase_style;
         result.saved_cursor = self.saved_cursor;
@@ -135,7 +154,7 @@ impl Screen {
         saved.wrap_pending &= self.saved_cursor.cursor.column + 1 == size.columns;
     }
 
-    pub fn erase(&mut self, row: usize, start: usize, end: usize) {
+    pub fn erase(&mut self, row: usize, start: usize, end: usize) -> (usize, usize) {
         let cells = &mut self.rows[row].cells;
         let start = if matches!(cells[start].view(), CellView::Continuation) {
             start - 1
@@ -148,6 +167,110 @@ impl Screen {
             end
         };
         cells[start..end].fill(Cell::EMPTY.with_style(self.erase_style));
+        (start, end)
+    }
+
+    /// Shift physical columns without cloning cluster allocations.
+    pub fn edit_characters(&mut self, count: usize, insert: bool) {
+        let row = self.cursor.row;
+        let start = self.cursor.column;
+        let columns = self.rows[row].cells.len();
+        let count = count.min(columns - start);
+        self.break_wrap(row); // Structural padding must never move into a row.
+        let starts_in_tail = matches!(self.rows[row].cells[start].view(), CellView::Continuation);
+        if start == 0 || (start == 1 && starts_in_tail) {
+            self.detach_before(row);
+        }
+        if insert {
+            if starts_in_tail {
+                self.erase(row, start, start + 1);
+            }
+            let cutoff = columns - count;
+            if matches!(self.rows[row].cells[cutoff].view(), CellView::Continuation) {
+                self.erase(row, cutoff, cutoff + 1);
+            }
+            self.rows[row].cells[start..].rotate_right(count);
+            self.rows[row].cells[start..start + count]
+                .fill(Cell::EMPTY.with_style(self.erase_style));
+        } else {
+            self.erase(row, start, start + count);
+            self.rows[row].cells[start..].rotate_left(count);
+            self.rows[row].cells[columns - count..].fill(Cell::EMPTY.with_style(self.erase_style));
+        }
+        self.cursor.wrap_pending = false;
+    }
+
+    /// Move whole rows only inside the cursor-to-bottom part of the region.
+    pub fn edit_lines(&mut self, count: usize, insert: bool) -> bool {
+        let row = self.cursor.row;
+        if !(self.top..=self.bottom).contains(&row) {
+            return false;
+        }
+        let count = count.min(self.bottom + 1 - row);
+        self.detach_before(row);
+        if insert {
+            self.rows[row..=self.bottom].rotate_right(count);
+            for y in row..row + count {
+                self.rows[y].clear(self.erase_style);
+            }
+            self.break_wrap(self.bottom);
+        } else {
+            self.rows[row..=self.bottom].rotate_left(count);
+            let blank_start = self.bottom + 1 - count;
+            for y in blank_start..=self.bottom {
+                self.rows[y].clear(self.erase_style);
+            }
+            if blank_start > row {
+                self.break_wrap(blank_start - 1);
+            }
+        }
+        self.cursor.wrap_pending = false;
+        true
+    }
+
+    pub fn erase_line(&mut self, row: usize, mode: u16) {
+        let columns = self.rows[row].cells.len();
+        let start = if mode == 0 { self.cursor.column } else { 0 };
+        let end = if mode == 1 {
+            self.cursor.column + 1
+        } else {
+            columns
+        };
+        let (start, end) = self.erase(row, start, end);
+        // Erased physical boundaries must not join surviving logical lines.
+        if start == 0 {
+            self.detach_before(row);
+        }
+        if end == columns {
+            self.break_wrap(row);
+        }
+        self.cursor.wrap_pending = false;
+    }
+
+    pub fn erase_display(&mut self, mode: u16) {
+        let row = self.cursor.row;
+        match mode {
+            0 => {
+                self.erase_line(row, 0);
+                for y in row + 1..self.rows.len() {
+                    self.erase_line(y, 2);
+                }
+            }
+            1 => {
+                for y in 0..row {
+                    self.erase_line(y, 2);
+                }
+                self.erase_line(row, 1);
+            }
+            2 => {
+                for y in 0..self.rows.len() {
+                    self.erase_line(y, 2);
+                }
+            }
+            // The alternate screen has no history. Hidden primary is untouched.
+            3 => self.history.clear(),
+            _ => unreachable!("validated ED mode"),
+        }
     }
 
     fn break_wrap(&mut self, row: usize) {
@@ -161,9 +284,9 @@ impl Screen {
         }
     }
 
-    fn detach_region_start(&mut self) {
-        if self.top > 0 {
-            self.break_wrap(self.top - 1);
+    fn detach_before(&mut self, row: usize) {
+        if row > 0 {
+            self.break_wrap(row - 1);
         } else if let Some(row) = self.history.back_mut() {
             row.soft_wrapped = false;
             if row
@@ -179,7 +302,7 @@ impl Screen {
     pub fn down(&mut self, history_capacity: usize, out: &mut FeedOutcome) {
         if self.cursor.row == self.bottom {
             if self.top != 0 || self.bottom + 1 != self.rows.len() {
-                self.detach_region_start();
+                self.detach_before(self.top);
             }
             self.rows[self.top..=self.bottom].rotate_left(1);
             if self.top == 0 && self.bottom + 1 == self.rows.len() && history_capacity > 0 {
@@ -210,7 +333,7 @@ impl Screen {
 
     pub fn reverse_index(&mut self, out: &mut FeedOutcome) {
         if self.cursor.row == self.top {
-            self.detach_region_start();
+            self.detach_before(self.top);
             self.rows[self.top..=self.bottom].rotate_right(1);
             self.rows[self.top].clear(self.erase_style);
             self.break_wrap(self.bottom);
@@ -223,7 +346,9 @@ impl Screen {
     }
 
     pub fn valid(&self, size: Size, limits: Limits) -> bool {
-        if self.rows.len() != size.lines
+        if (!self.autowrap && self.cursor.wrap_pending)
+            || (!self.saved_cursor.autowrap && self.saved_cursor.cursor.wrap_pending)
+            || self.rows.len() != size.lines
             || self.top > self.bottom
             || self.bottom >= size.lines
             || (self.origin && !(self.top..=self.bottom).contains(&self.cursor.row))
@@ -555,6 +680,7 @@ impl ReflowSink {
                 history,
                 cursor,
                 origin: false,
+                autowrap: true,
                 style: 0,
                 erase_style: 0,
                 top: 0,

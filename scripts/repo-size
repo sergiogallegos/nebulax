@@ -1,0 +1,157 @@
+#!/usr/bin/env python3
+"""Count physical repository lines, with disjoint categories and baseline deltas."""
+import argparse
+import io
+import json
+from pathlib import Path
+import subprocess
+import tarfile
+
+ROOT = Path(__file__).resolve().parent.parent
+CATEGORIES = {
+    "core": "Rust terminal core (handwritten)",
+    "runtime": "Rust PTY/runtime (prototype)",
+    "rust_bridge": "Rust native/FFI bridge",
+    "c_headers": "C ABI headers",
+    "c_source": "C integration implementation",
+    "macos": "macOS frontend (prototype)",
+    "windows": "Windows frontend",
+    "linux": "Linux frontend",
+    "python": "Python tooling/peers",
+    "tooling": "Other build/tool scripts",
+    "research": "Research/reference code",
+    "tests": "Dedicated test files",
+    "generated": "Generated source",
+    "vendor": "Vendored code/data/licenses",
+    "docs": "Documentation/licenses",
+    "config": "Configuration/lockfiles",
+    "data": "Fixtures/patches/other data",
+    "evidence": "Retained evidence (text + binary)",
+    "other": "Other files (review classification)",
+}
+FIELDS = ("files", "lines", "nonblank", "bytes", "binary_files")
+
+
+def git(*args, root=ROOT):
+    return subprocess.check_output(["git", *args], cwd=root)
+
+
+def language(path, data):
+    suffix = Path(path).suffix.lower()
+    if suffix == ".py" or data.startswith(b"#!/usr/bin/env python"):
+        return "Python"
+    return {".rs": "Rust", ".swift": "Swift", ".h": "C header", ".c": "C",
+            ".cs": "C#", ".cpp": "C++", ".cc": "C++", ".hpp": "C++ header",
+            ".sh": "Shell"}.get(suffix, "Shell" if data.startswith(b"#!/bin/sh") else "Other")
+
+
+def category(path, data):
+    p = Path(path)
+    if path.startswith("third_party/"):
+        return "vendor"
+    if path.startswith("benchmarks/results/"):
+        return "evidence"
+    if p.suffix in (".md", ".rst") or p.name in ("LICENSE", "NOTICE"):
+        return "docs"
+    if path == "crates/terminal/src/tables.rs":
+        return "generated"
+    if path.startswith("tests/fixtures/") or p.suffix == ".patch":
+        return "data"
+    if p.suffix in (".toml", ".lock", ".json", ".yml", ".yaml") or p.name in (
+        ".gitignore", ".gitattributes", ".editorconfig", ".python-version"
+    ):
+        return "config"
+    if "tests" in p.parts or p.name.startswith("test_"):
+        return "tests"
+    lang = language(path, data)
+    if lang == "Python":
+        return "python"
+    if path.startswith("scripts/"):
+        return "tooling"
+    if path.startswith("crates/terminal/src/") and lang == "Rust":
+        return "core"
+    if path.startswith("experiments/pty-session/src/"):
+        return "runtime"
+    if path.startswith("experiments/native-bridge/src/"):
+        return "rust_bridge"
+    if path.startswith(("experiments/native-bridge/include/", "include/")) and lang == "C header":
+        return "c_headers"
+    if path.startswith(("experiments/native-bridge/", "bindings/")) and lang == "C":
+        return "c_source"
+    for prefix, label in (("experiments/native-window/", "macos"), ("apps/macos/", "macos"),
+                          ("apps/windows/", "windows"), ("apps/linux/", "linux")):
+        if path.startswith(prefix):
+            return label
+    if path.startswith("experiments/") or "examples" in p.parts:
+        return "research"
+    return "other"
+
+
+def measure(path, data):
+    try:
+        text = data.decode("utf-8")
+        binary = "\0" in text
+    except UnicodeDecodeError:
+        binary = True
+    # LF-delimited physical lines; an unterminated final line counts once.
+    lines = [] if binary or not data else text.split("\n")
+    if lines and lines[-1] == "":
+        lines.pop()
+    return {"path": path, "category": category(path, data), "language": language(path, data),
+            "files": 1, "lines": len(lines), "nonblank": sum(bool(s.strip()) for s in lines),
+            "bytes": len(data), "binary_files": int(binary)}
+
+
+def summarize(records):
+    groups = {key: dict.fromkeys(FIELDS, 0) for key in CATEGORIES}
+    total = dict.fromkeys(FIELDS, 0)
+    for record in records:
+        for key in FIELDS:
+            groups[record["category"]][key] += record[key]
+            total[key] += record[key]
+    return {"groups": groups, "total": total, "files": records}
+
+
+def current(root=ROOT):
+    names = sorted(set(git("ls-files", "--cached", "--others", "--exclude-standard", "-z", root=root).decode().split("\0")) - {""})
+    return summarize([measure(name, (root / name).read_bytes()) for name in names
+                      if (root / name).is_file() and not (root / name).is_symlink()])
+
+
+def committed(root=ROOT):
+    # Read the committed tree without checking out files or following symlinks.
+    with tarfile.open(fileobj=io.BytesIO(git("archive", "HEAD", root=root))) as archive:
+        return summarize([measure(member.name, archive.extractfile(member).read())
+                          for member in archive.getmembers() if member.isfile()])
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--baseline", type=Path, help="Earlier JSON report; default compares with HEAD")
+    parser.add_argument("--json-output", type=Path, help="Write auditable per-file report, normally under ignored target/")
+    args = parser.parse_args()
+    baseline = json.loads(args.baseline.read_text()) if args.baseline else None
+    if baseline and baseline.get("schema_version") != 1:
+        parser.error("unsupported baseline schema")
+    before = baseline["current"] if baseline else committed()
+    now = current()
+    report = {"schema_version": 1, "metric": "LF physical lines including comments; nonblank excludes whitespace-only lines",
+              "scope": "existing tracked + nonignored untracked regular files; no symlinks, ignored builds or .git",
+              "head": git("rev-parse", "HEAD").decode().strip(),
+              "baseline": str(args.baseline) if args.baseline else "HEAD",
+              "current": now, "previous": {"groups": before["groups"], "total": before["total"]}}
+    print(f"Repository size — physical lines (including comments); delta vs {report['baseline']}")
+    print(f"{'Category':42} {'Files':>6} {'LOC':>9} {'Nonblank':>9} {'Δ lines':>9}")
+    for key, label in [*CATEGORIES.items(), ("total", "TOTAL")]:
+        a = now["total"] if key == "total" else now["groups"][key]
+        b = before["total"] if key == "total" else before["groups"][key]
+        print(f"{label:42} {a['files']:6,} {a['lines']:9,} {a['nonblank']:9,} {a['lines'] - b['lines']:+9,}")
+    print("Binary files contribute bytes/files, zero lines. Inline tests stay in their source files.")
+    if args.json_output:
+        args.json_output.parent.mkdir(parents=True, exist_ok=True)
+        args.json_output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n")
+        print(f"Per-file report: {args.json_output}")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,19 @@
+{
+  "abi_version" : 3,
+  "application_cursor_reply_and_region_seen" : true,
+  "arrow_seen" : true,
+  "autowrap_disabled_edge_verified" : true,
+  "character_and_region_line_edits_verified" : true,
+  "child_reaped_before_window_close" : true,
+  "close_heartbeat_progress" : 1,
+  "native_key_events" : 7,
+  "outside_region_rows_preserved" : true,
+  "paint_count" : 8,
+  "resize_columns" : 90,
+  "resize_lines" : 25,
+  "styled_wide_cell_and_erased_background_verified" : true,
+  "success" : true,
+  "tabs_and_full_line_erase_verified" : true,
+  "typed_text_seen" : true,
+  "visibility_only_cursor_pixels_changed" : 20
+}

@@ -132,3 +132,32 @@ fn pty_peer_negotiates_cursor_modes_origin_replies_and_region_scroll() {
     assert_eq!(w.status().exit_code, 0);
     assert_eq!(w.latest(0).unwrap().text(), b"TOPPASSSCROLL");
 }
+
+#[test]
+fn visibility_only_pty_output_publishes_a_new_frame_with_unchanged_rows() {
+    use nebulax_pty_session::input::Input;
+    let w = start(
+        "python3",
+        &[
+            "-c",
+            "import os,tty;tty.setraw(0);os.write(1,b'\\x1b[?7l123456789\\x1b[?25l');assert os.read(0,1)==b'v';os.write(1,b'\\x1b[?25h');os.read(0,1)",
+        ],
+    );
+    wait(|| w.latest(0).is_some_and(|f| !f.cursor_visible()));
+    let hidden = w.latest(0).unwrap();
+    assert_eq!(hidden.text(), b"12345679");
+    assert!(!hidden.cursor().wrap_pending);
+    w.input(Input::Text("v".into())).unwrap();
+    wait(|| {
+        w.latest(hidden.generation())
+            .is_some_and(|f| f.cursor_visible())
+    });
+    let shown = w.latest(hidden.generation()).unwrap();
+    assert_eq!(shown.row_versions(), hidden.row_versions());
+    assert_eq!(shown.cursor(), hidden.cursor());
+    assert_eq!(shown.text(), hidden.text());
+    w.close();
+    wait(|| w.is_finished());
+    drop(w);
+    assert!(!hidden.cursor_visible() && shown.cursor_visible());
+}

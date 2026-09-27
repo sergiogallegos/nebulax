@@ -8,10 +8,11 @@ pub struct StorageUsage {
     pub cluster_bytes: usize,
     pub cluster_allocations: usize,
     pub style_bytes: usize,
+    pub tab_bytes: usize,
 }
 impl StorageUsage {
     pub fn heap_bytes(self) -> usize {
-        self.cell_bytes + self.row_bytes + self.cluster_bytes + self.style_bytes
+        self.cell_bytes + self.row_bytes + self.cluster_bytes + self.style_bytes + self.tab_bytes
     }
 }
 impl Terminal {
@@ -20,6 +21,7 @@ impl Terminal {
     pub fn storage_usage(&self) -> StorageUsage {
         let mut result = StorageUsage {
             style_bytes: self.styles.heap_bytes(),
+            tab_bytes: self.tabs.heap_bytes(),
             ..StorageUsage::default()
         };
         for screen in std::iter::once(&self.active).chain(self.saved_primary.iter()) {

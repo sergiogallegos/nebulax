@@ -36,6 +36,8 @@ pub struct NbFrame {
     pub row_count: usize,
     pub styles: *const Style,
     pub style_count: usize,
+    pub cursor_visible: u32,
+    pub reserved: u32,
 }
 fn boundary(f: impl FnOnce() -> Result<(), i32>) -> i32 {
     match catch_unwind(AssertUnwindSafe(f)) {
@@ -71,7 +73,7 @@ unsafe fn string(bytes: NbBytes) -> Result<String, i32> {
 // SAFETY: project-private prefixed symbol; declaration matches the checked C header.
 #[unsafe(no_mangle)]
 pub extern "C" fn nb_abi_version() -> u32 {
-    2
+    3
 }
 
 /// # Safety
@@ -244,6 +246,8 @@ pub unsafe extern "C" fn nb_frame_view(handle: u64, out: *mut NbFrame) -> i32 {
                 row_count: frame.row_versions().len(),
                 styles: frame.styles().as_ptr(),
                 style_count: frame.styles().len(),
+                cursor_visible: u32::from(frame.cursor_visible()),
+                reserved: 0,
             })
         };
         Ok(())

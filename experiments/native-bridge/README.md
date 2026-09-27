@@ -8,7 +8,7 @@ scripts/native-bridge --output target/native-bridge/evidence
 scripts/verify
 ```
 
-The first command builds and executes C layout/argument/lifetime checks and a Swift 6 PTY/resize/teardown check. `--output` additionally records 110 Rust tests across the core, PTY and bridge packages, exact sources, raw command results, native binary hashes and toolchains. Full workspace verification currently runs 125 Rust tests on macOS, plus these C/Swift checks. Non-macOS verification runs the portable Rust subset and explicitly skips the native smoke checks.
+The first command builds and executes C layout/argument/lifetime checks and a Swift 6 PTY/resize/teardown check. `--output` additionally records 145 Rust tests across the core, PTY and bridge packages, exact sources, raw command results, native binary hashes and toolchains. Full workspace verification currently runs 160 Rust tests on macOS, plus these C/Swift checks. Non-macOS verification runs the portable Rust subset and explicitly skips the native smoke checks.
 
 ## Native ownership contract
 
@@ -29,8 +29,14 @@ All input pointer lengths, validity and output ownership obligations are in the 
 
 The worker may hold its previous frame while building a candidate. Across four sessions and eight acquired handles, this bounds snapshot payload to at most 32 MiB; engine state, resize clones, worker stacks, metadata and allocator overhead are separate. These are logical payload bounds, not RSS measurements. Direct Rust users of `Snapshot`/`Worker` must bound their own retained values; the handle caps are enforced by this C bridge.
 
-Snapshots are copied from the authoritative visible grid with exact text sizing. Row versions are derived by content comparison, not engine edit-time dirty tracking. Private ABI v2 uses 12-byte snapshot cells, 12-byte style values and 104-byte frame metadata. Core cells remain 16 bytes. Callers check version 2 before using the interface. Full-frame copy and a 2 ms idle worker cadence are prototype choices, not performance conclusions. History export remains open; copied styles and color-sensitive damage are implemented. A basic key encoder and a separate AppKit preview now consume this bridge; IME/accessibility remain unimplemented.
+Snapshots are copied from the authoritative visible grid with exact text sizing. Row versions are derived by content comparison, not engine edit-time dirty tracking. Private ABI v3 uses 12-byte snapshot cells, 12-byte style values and 112-byte frame metadata. Core cells remain 16 bytes. Callers check version 3 before using the interface. Full-frame copy and a 2 ms idle worker cadence are prototype choices, not performance conclusions. History export remains open; copied styles and color-sensitive damage are implemented. A basic key encoder and a separate AppKit preview now consume this bridge; IME/accessibility remain unimplemented.
 
 See [ADR 0008](../../docs/adr/0008-snapshot-worker-and-private-ffi.md), [findings](../../research/2026-09-26-native-boundary.md) and [retained evidence](../../benchmarks/results/p0-09-native-boundary/summary.json). The [AppKit/basic-input preview](../native-window/README.md) now connects this frame lifecycle to a view. `nb_session_text/key` accept bounded native input; see [ADR 0009](../../docs/adr/0009-native-window-and-basic-input.md) for byte/event limits and partial-write ordering.
 
-[ADR 0012](../../docs/adr/0012-bounded-styles-and-native-rendition.md) defines style encoding, ownership and the v2 layout. [Current evidence](../../benchmarks/results/p0-13-style-boundary/summary.json) extends the historical v1 run with styles and retained palettes.
+[ADR 0012](../../docs/adr/0012-bounded-styles-and-native-rendition.md) defines style encoding, ownership and the v2 layout. [Style evidence](../../benchmarks/results/p0-13-style-boundary/summary.json) extends the historical v1 run with styles and retained palettes.
+
+[Tab/erase boundary evidence](../../benchmarks/results/p0-14-tabs-boundary/summary.json) records 123 relevant Rust tests and the unchanged ABI v2 C/Swift checks after tab/erase integration.
+
+[Editing boundary evidence](../../benchmarks/results/p0-15-edit-boundary/summary.json) records 134 relevant Rust tests and the unchanged ABI v2 checks after insertion/deletion.
+
+[Current boundary evidence](../../benchmarks/results/p0-16-modes-boundary/summary.json) records 145 relevant Rust tests plus C/Swift ABI v3 checks. `cursor_visible` is frame-owned; `reserved` is zero. Cursor metadata can change without row damage, so renderers must handle the overlay separately. [ADR 0015](../../docs/adr/0015-autowrap-and-cursor-visibility.md) records the layout change.

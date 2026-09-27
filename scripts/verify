@@ -10,3 +10,5 @@ python3 scripts/replay --allow-known-gaps
 python3 scripts/replay --engine owned
 python3 scripts/native-bridge
 python3 scripts/native-window --check
+python3 -m unittest discover -s tests/tooling -p 'test_*.py'
+python3 scripts/repo-size --json-output target/repo-size/current.json

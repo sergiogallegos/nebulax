@@ -28,3 +28,9 @@ Current decisions live in [ADRs](../docs/adr/0001-approved-direction.md); resear
 - [Integrated compact storage](2026-09-26-compact-storage.md): real 16-byte cells, direct tail reclamation, row reuse, 100-sample before/after measurements and native regression.
 
 - [Bounded styles and native rendition](2026-09-27-bounded-styles.md): reclaimable style IDs, SGR subset, copied snapshot palettes, ABI v2 and styled AppKit evidence.
+
+- [Tabs and line/display erasure](2026-09-27-tabs-and-erasure.md): bounded shared stops, wide-aware ranges, history policy and clean-shell/native evidence.
+
+- [Character and line insertion/deletion](2026-09-27-insertion-deletion.md): in-place ownership, wide-cell cuts, region/history isolation and shell/native evidence.
+
+- [Autowrap and cursor visibility](2026-09-27-autowrap-visibility.md): saved wrap modes, whole wide-owner edge policy, metadata-only snapshots and native pixel evidence.

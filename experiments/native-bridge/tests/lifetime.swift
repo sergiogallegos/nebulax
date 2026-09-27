@@ -20,7 +20,7 @@ func view(_ handle: UInt64) -> NbFrame {
 func text(_ frame: NbFrame) -> [UInt8] {
     Array(UnsafeBufferPointer(start: frame.text, count: frame.text_len))
 }
-precondition(nb_abi_version() == 2 && MemoryLayout<NbCell>.size == 12 && MemoryLayout<NbFrame>.size == 104 && MemoryLayout<NbStyle>.size == 12)
+precondition(nb_abi_version() == 3 && MemoryLayout<NbCell>.size == 12 && MemoryLayout<NbFrame>.size == 112 && MemoryLayout<NbStyle>.size == 12)
 let session = start(CommandLine.arguments[1], [CommandLine.arguments[2], "roundtrip"])
 let deadline = Date().addingTimeInterval(5)
 var held: UInt64 = 0
@@ -36,6 +36,7 @@ while true {
         let acquired = nb_frame_acquire(session, 0, &held)
         precondition(acquired == NB_OK || acquired == NB_NO_FRAME)
         if acquired == NB_OK {
+            precondition(view(held).cursor_visible == 1 && view(held).reserved == 0)
             heldBytes = text(view(held))
             precondition(nb_session_resize(session, 12, 4) == NB_OK)
             resized = true

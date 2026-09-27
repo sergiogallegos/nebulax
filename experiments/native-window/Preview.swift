@@ -123,7 +123,7 @@ final class GridView: NSView {
                             y: bounds.height - inset - CGFloat(snapshot.cursor_row + 1) * cellHeight,
                             width: cellWidth, height: 2)
         context.setFillColor(NSColor(calibratedRed: 0.40, green: 0.83, blue: 0.73, alpha: 1).cgColor)
-        context.fill(cursor)
+        if snapshot.cursor_visible != 0 { context.fill(cursor) }
         context.restoreGState()
         paintCount += 1
     }
@@ -156,13 +156,17 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var closeHeartbeat = 0
     var renderedText = ""
     var completedTest = false
+    var hiddenBitmap: NSBitmapImageRep?
+    var hiddenVersions: [UInt64] = []
+    var hiddenCursor: (UInt32, UInt32) = (0, 0)
+    var cursorPixelChanges = 0
     var inputMessage: String?
     let arguments = CommandLine.arguments
     var testing: Bool { arguments.contains("--self-test") }
     var shell: Bool { arguments.contains("--shell") }
     func option(_ name: String) -> String? { guard let i = arguments.firstIndex(of: name), arguments.indices.contains(i+1) else { return nil }; return arguments[i+1] }
     func applicationDidFinishLaunching(_ notification: Notification) {
-        precondition(nb_abi_version() == 2)
+        precondition(nb_abi_version() == 3)
         NSApp.setActivationPolicy(.regular)
         let menu = NSMenu()
         let item = NSMenuItem()
@@ -300,7 +304,7 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
         } else if testStage == 2 && text.contains("APP READY") && text.contains("REGION OK") {
             event("\u{f700}", code: 126)
             testStage = 3
-        } else if testStage == 3 && text.contains("STYLE OK") {
+        } else if testStage == 3 && text.contains("STYLE OK") && frame.view.cursor_visible == 0 {
             precondition(text.contains("APP KEY Up") && text.contains("FIXED TOP") && text.contains("FIXED BOTTOM"))
             window.setContentSize(NSSize(width: 948, height: 630))
             testStage = 4
@@ -309,6 +313,15 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
             precondition(text.contains("PROTOCOL OK") && text.contains("APP KEY Up") && text.contains("REGION OK"))
             precondition(text.contains("FIXED TOP") && text.contains("FIXED BOTTOM"))
             precondition(text.contains("STYLE OK"))
+            precondition(text.contains("EDITOK") && !text.contains("INSERTED"))
+            precondition(frame.view.cells![15 * 90 + 4].kind == 0)
+            let edited = frame.view.cells![15 * 90 + 5]
+            precondition(edited.text_len == 1 && frame.view.text![Int(edited.text_offset)] == 79)
+            let tabbed = frame.view.cells![20 * 90 + 8]
+            precondition(tabbed.text_len == 1 && frame.view.text![Int(tabbed.text_offset)] == 79)
+            let countedTab = frame.view.cells![20 * 90 + 16]
+            precondition(countedTab.text_len == 1 && frame.view.text![Int(countedTab.text_offset)] == 33)
+            precondition(frame.view.cells![20 * 90 + 4].kind == 0)
             let styled = frame.view.cells![22 * 90]
             let rendition = frame.view.styles![Int(styled.style_id)]
             precondition(rendition.foreground == 0x020c2238 && rendition.background == 0x010000e6 && rendition.attributes == 13)
@@ -316,24 +329,59 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let erased = frame.view.cells![22 * 90 + 60]
             let eraseStyle = frame.view.styles![Int(erased.style_id)]
             precondition(erased.kind == 0 && eraseStyle.background == 0x01000011 && eraseStyle.foreground == 0 && eraseStyle.attributes == 0)
+            precondition(frame.view.cursor_visible == 0)
+            let edge = frame.view.cells![18 * 90 + 79]
+            precondition(edge.text_len == 1 && frame.view.text![Int(edge.text_offset)] == 68)
+            precondition(frame.view.row_wraps![18] == 0)
             grid.displayIfNeeded()
             precondition(grid.paintCount > 0)
             renderedText = text
             let output = option("--output")!
             let bitmap = grid.bitmapImageRepForCachingDisplay(in: grid.bounds)!
             grid.cacheDisplay(in: grid.bounds, to: bitmap)
-            try! bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: output).appendingPathComponent("window.png"))
+            try! bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: output).appendingPathComponent("hidden.png"))
+            hiddenBitmap = bitmap
+            hiddenVersions = Array(UnsafeBufferPointer(start: frame.view.row_versions, count: frame.view.row_count))
+            hiddenCursor = (frame.view.cursor_row, frame.view.cursor_column)
             testStage = 5
+            event("v", code: 9)
+        } else if testStage == 5 && frame.view.cursor_visible == 1 {
+            precondition(text == renderedText && frame.view.cursor_row == hiddenCursor.0 && frame.view.cursor_column == hiddenCursor.1)
+            precondition(Array(UnsafeBufferPointer(start: frame.view.row_versions, count: frame.view.row_count)) == hiddenVersions)
+            grid.displayIfNeeded()
+            let bitmap = grid.bitmapImageRepForCachingDisplay(in: grid.bounds)!
+            grid.cacheDisplay(in: grid.bounds, to: bitmap)
+            let old = hiddenBitmap!
+            precondition(old.pixelsWide == bitmap.pixelsWide && old.pixelsHigh == bitmap.pixelsHigh)
+            // Inspect rendered pixels, not a drawing counter. Only the cursor's
+            // cell may differ after a visibility-only frame with identical rows.
+            let sx = CGFloat(bitmap.pixelsWide) / grid.bounds.width
+            let sy = CGFloat(bitmap.pixelsHigh) / grid.bounds.height
+            let left = Int((grid.inset + CGFloat(hiddenCursor.1) * grid.cellWidth) * sx)
+            let top = Int((grid.inset + CGFloat(hiddenCursor.0) * grid.cellHeight) * sy)
+            for y in 0..<bitmap.pixelsHigh {
+                for x in 0..<bitmap.pixelsWide {
+                    if old.colorAt(x: x, y: y) != bitmap.colorAt(x: x, y: y) {
+                        precondition(x >= left && x < left + Int(grid.cellWidth * sx) && y >= top && y < top + Int(grid.cellHeight * sy))
+                        cursorPixelChanges += 1
+                    }
+                }
+            }
+            precondition(cursorPixelChanges > 0)
+            try! bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: option("--output")!).appendingPathComponent("window.png"))
+            hiddenBitmap = nil
+            testStage = 6
             window.performClose(nil)
         }
     }
     func recordSuccess() {
-        let result: [String: Any] = ["success": true, "native_key_events": 6, "resize_columns": 90, "resize_lines": 25,
+        let result: [String: Any] = ["success": true, "native_key_events": 7, "resize_columns": 90, "resize_lines": 25,
                                   "paint_count": grid.paintCount, "close_heartbeat_progress": heartbeat - closeHeartbeat,
                                   "typed_text_seen": renderedText.contains("You typed: Rust 界"), "arrow_seen": renderedText.contains("Key: Up"),
                                   "application_cursor_reply_and_region_seen": renderedText.contains("PROTOCOL OK") && renderedText.contains("APP KEY Up") && renderedText.contains("REGION OK"),
                                   "outside_region_rows_preserved": renderedText.contains("FIXED TOP") && renderedText.contains("FIXED BOTTOM"),
-                                  "styled_wide_cell_and_erased_background_verified": true, "abi_version": nb_abi_version(),
+                                  "character_and_region_line_edits_verified": true, "tabs_and_full_line_erase_verified": true, "styled_wide_cell_and_erased_background_verified": true, "abi_version": nb_abi_version(),
+                                  "autowrap_disabled_edge_verified": true, "visibility_only_cursor_pixels_changed": cursorPixelChanges,
                                   "child_reaped_before_window_close": true]
         try! JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: option("--output")!).appendingPathComponent("window.json"))
         completedTest = true

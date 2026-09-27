@@ -24,6 +24,7 @@ pub enum SnapshotError {
 pub struct Snapshot {
     size: Size,
     cursor: Cursor,
+    cursor_visible: bool,
     alternate: bool,
     generation: u64,
     cells: Box<[SnapshotCell]>,
@@ -91,6 +92,7 @@ impl Snapshot {
         let mut result = Self {
             size,
             cursor: terminal.cursor(),
+            cursor_visible: terminal.cursor_visible(),
             alternate: terminal.is_alternate(),
             generation,
             cells: cells.into_boxed_slice(),
@@ -137,6 +139,9 @@ impl Snapshot {
     }
     pub fn cursor(&self) -> Cursor {
         self.cursor
+    }
+    pub fn cursor_visible(&self) -> bool {
+        self.cursor_visible
     }
     pub fn is_alternate(&self) -> bool {
         self.alternate

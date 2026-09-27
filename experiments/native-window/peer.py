@@ -31,10 +31,17 @@ def protocol_probe():
         actual += part
     assert actual == expected, (actual, expected)
     write("\x1b[2;1HAPP KEY Up\x1b[?1;6l\x1b[r\x1b[22;1HPROTOCOL OK")
+    write("\x1b[21;1Hstale text\x1b[2K\rTABS\tOK\x1b[1G\x1b[2I!")
+    write("\x1b[16;19r\x1b[16;1HEDITxxOK\x1b[5G\x1b[2P\x1b[@")
+    write("\x1b[16;1H\x1b[LINSERTED\x1b[16;1H\x1b[M\x1b[r")
+    write("\x1b[19;78H\x1b[?7lABCD\x1b[?7h")
     write("\x1b[23;1H\x1b[1;3;4;38:2::12:34:56;48;5;230m界 RGB + indexed")
-    write("\x1b[0;48;5;17m\x1b[K\x1b[0m\x1b[24;1HSTYLE OK")
+    write("\x1b[0;48;5;17m\x1b[K\x1b[0m\x1b[24;1HSTYLE OK\x1b[?25l")
+    assert os.read(0, 1) == b"v"
+    write("\x1b[?25h")
 
 
+write("stale display\x1b[2J\x1b[H")
 write("NEBULAX\r\n\r\nWelcome to your terminal.\r\n")
 write("Unicode: cafe\u0301  界  👩‍💻\r\n")
 write("\x1b[1;36mBold cyan\x1b[0m  \x1b[3;38;5;214mItalic amber\x1b[0m  \x1b[4mUnderline\x1b[0m  \x1b[7mInverse\x1b[0m\r\n")
