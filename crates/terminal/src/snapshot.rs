@@ -1,5 +1,5 @@
 //! Owned visible frames. No engine borrows, cluster handles, history or I/O.
-use crate::{Cell, Cursor, Size, Terminal};
+use crate::{CellView, Cursor, Size, Terminal};
 
 pub const MAX_SNAPSHOT_BYTES: usize = 2 * 1024 * 1024;
 
@@ -43,7 +43,7 @@ impl Snapshot {
         let mut text_bytes = 0usize;
         for row in terminal.screen() {
             for cell in row.cells() {
-                if let Cell::Lead { cluster, .. } = cell {
+                if let CellView::Lead { cluster, .. } = cell.view() {
                     text_bytes += cluster.chars().map(char::len_utf8).sum::<usize>();
                     if metadata + text_bytes > MAX_SNAPSHOT_BYTES {
                         return Err(SnapshotError::ByteLimit);
@@ -63,13 +63,13 @@ impl Snapshot {
             row_wraps.push(u8::from(row.soft_wrapped()));
             for cell in row.cells() {
                 let mut view = SnapshotCell::default();
-                match cell {
-                    Cell::Empty => {}
-                    Cell::Continuation => view.kind = 2,
-                    Cell::WrapPadding => view.kind = 3,
-                    Cell::Lead { cluster, width } => {
+                match cell.view() {
+                    CellView::Empty => {}
+                    CellView::Continuation => view.kind = 2,
+                    CellView::WrapPadding => view.kind = 3,
+                    CellView::Lead { cluster, width } => {
                         view.kind = 1;
-                        view.width = *width;
+                        view.width = width;
                         view.text_offset = text.len() as u32;
                         for c in cluster.chars() {
                             text.extend_from_slice(c.encode_utf8(&mut [0; 4]).as_bytes());

@@ -1,6 +1,6 @@
 use nebulax_terminal::{
-    Cell, Cursor, FeedOutcome, Limits, OutputEvent, Row, Size, Terminal, WidthPolicy, input::Key,
-    snapshot::Snapshot,
+    CellView as Cell, Cursor, FeedOutcome, Limits, OutputEvent, Row, Size, Terminal, WidthPolicy,
+    input::Key, snapshot::Snapshot,
 };
 
 fn terminal(columns: usize, lines: usize) -> Terminal {
@@ -17,7 +17,7 @@ fn rows(rows: impl IntoIterator<Item = impl std::borrow::Borrow<Row>>) -> Vec<St
             row.borrow()
                 .cells()
                 .iter()
-                .map(|cell| match cell {
+                .map(|cell| match cell.view() {
                     Cell::Lead { cluster, .. } => cluster.chars().collect::<String>(),
                     Cell::Empty => ".".into(),
                     Cell::Continuation => "~".into(),

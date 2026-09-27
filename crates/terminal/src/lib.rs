@@ -1,5 +1,7 @@
 //! Owned terminal-state research slice. No I/O, async runtime or dependencies.
 //! Bounded primary history, alternate screen and grapheme-preserving reflow.
+mod cell;
+pub use cell::{Cell, CellView, Cluster};
 mod decoder;
 pub mod input;
 pub mod output;
@@ -7,6 +9,7 @@ pub mod parser;
 mod screen;
 mod semantic;
 pub mod snapshot;
+pub mod storage;
 mod tables;
 pub mod unicode;
 
@@ -60,10 +63,11 @@ mod tests {
         .unwrap();
         terminal.feed(&[b'x'; 80]);
         for cell in terminal.screen()[0].cells() {
-            let Cell::Lead { cluster, width: 1 } = cell else {
+            let CellView::Lead { cluster, width: 1 } = cell.view() else {
                 panic!("expected ASCII lead")
             };
-            assert_eq!(cluster.extra.capacity(), 0);
+            assert_eq!(cluster.scalar_count(), 1);
+            assert_eq!(cell.heap_bytes(), 0);
         }
     }
 }
@@ -81,37 +85,6 @@ pub struct Cursor {
     pub wrap_pending: bool,
 }
 
-/// Scalars live only in the lead. Single-scalar text never allocates a buffer.
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct Cluster {
-    first: char,
-    extra: Vec<char>,
-}
-
-impl Cluster {
-    pub fn chars(&self) -> impl Iterator<Item = char> + '_ {
-        std::iter::once(self.first).chain(self.extra.iter().copied())
-    }
-    pub fn scalar_count(&self) -> usize {
-        1 + self.extra.len()
-    }
-    fn last(&self) -> char {
-        self.extra.last().copied().unwrap_or(self.first)
-    }
-}
-
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub enum Cell {
-    #[default]
-    Empty,
-    Lead {
-        cluster: Cluster,
-        width: u8,
-    },
-    Continuation,
-    WrapPadding,
-}
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Row {
     cells: Vec<Cell>,
@@ -121,9 +94,13 @@ pub struct Row {
 impl Row {
     fn blank(columns: usize) -> Self {
         Self {
-            cells: vec![Cell::Empty; columns],
+            cells: vec![Cell::EMPTY; columns],
             soft_wrapped: false,
         }
+    }
+    fn clear(&mut self) {
+        self.cells.fill(Cell::EMPTY);
+        self.soft_wrapped = false;
     }
     pub fn cells(&self) -> &[Cell] {
         &self.cells
@@ -392,33 +369,32 @@ impl Terminal {
     fn print(&mut self, c: char, out: &mut FeedOutcome) {
         let boundary = self.segmenter.push(c);
         if !boundary && let Some((row, col)) = self.last_lead {
-            let (old_width, new_width) = match &mut self.active.rows[row].cells[col] {
-                Cell::Lead { cluster, width } => {
-                    if cluster.scalar_count() >= self.limits.cluster_scalars {
-                        out.cluster_limit = true;
-                        return; // Segmentation still advances: retain a bounded prefix until next boundary.
-                    }
-                    let new = self.policy.extend(*width, cluster.last(), c).max(1);
-                    cluster.extra.push(c);
-                    (*width, new)
-                }
-                _ => unreachable!("extension target is always a lead"),
+            let cell = &mut self.active.rows[row].cells[col];
+            let CellView::Lead {
+                cluster,
+                width: old_width,
+            } = cell.view()
+            else {
+                unreachable!("extension target is a lead")
             };
+            if cluster.scalar_count() >= self.limits.cluster_scalars {
+                out.cluster_limit = true;
+                return; // Segmentation still advances; retain a bounded prefix.
+            }
+            let new_width = self.policy.extend(old_width, cluster.last(), c).max(1);
+            cell.push(c);
             if old_width != new_width {
-                let Cell::Lead { cluster, .. } =
-                    std::mem::take(&mut self.active.rows[row].cells[col])
-                else {
-                    unreachable!()
-                };
+                let mut cell = std::mem::take(cell);
+                cell.set_width(new_width);
                 if old_width == 2 {
-                    self.active.rows[row].cells[col + 1] = Cell::Empty;
+                    self.active.rows[row].cells[col + 1] = Cell::EMPTY;
                 }
                 self.active.cursor = Cursor {
                     row,
                     column: col,
                     wrap_pending: false,
                 };
-                self.place(cluster, new_width, out);
+                self.place(cell, new_width, out);
             }
             out.changed = true;
             return;
@@ -429,17 +405,10 @@ impl Terminal {
             out.orphan_mark = true; // Explicit slice policy: discard unattached zero-width text.
             return;
         }
-        self.place(
-            Cluster {
-                first: c,
-                extra: Vec::new(),
-            },
-            width,
-            out,
-        );
+        self.place(Cell::lead(c, width), width, out);
     }
 
-    fn place(&mut self, cluster: Cluster, width: u8, out: &mut FeedOutcome) {
+    fn place(&mut self, cell: Cell, width: u8, out: &mut FeedOutcome) {
         if self.active.cursor.wrap_pending {
             self.wrap(out);
         }
@@ -450,14 +419,14 @@ impl Terminal {
                 self.size.columns,
             );
             self.active.rows[self.active.cursor.row].cells[self.active.cursor.column] =
-                Cell::WrapPadding;
+                Cell::WRAP_PADDING;
             self.wrap(out);
         }
         let (row, col) = (self.active.cursor.row, self.active.cursor.column);
         self.erase(row, col, col + usize::from(width));
-        self.active.rows[row].cells[col] = Cell::Lead { cluster, width };
+        self.active.rows[row].cells[col] = cell;
         if width == 2 {
-            self.active.rows[row].cells[col + 1] = Cell::Continuation;
+            self.active.rows[row].cells[col + 1] = Cell::CONTINUATION;
         }
         self.last_lead = Some((row, col));
         self.set_after(row, col, width);
@@ -478,8 +447,12 @@ impl Terminal {
         }
         self.last_lead.is_none_or(|(r, c)| {
             matches!(
-                self.active.rows.get(r).and_then(|row| row.cells.get(c)),
-                Some(Cell::Lead { .. })
+                self.active
+                    .rows
+                    .get(r)
+                    .and_then(|row| row.cells.get(c))
+                    .map(Cell::view),
+                Some(CellView::Lead { .. })
             )
         })
     }

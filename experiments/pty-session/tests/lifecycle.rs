@@ -1,6 +1,6 @@
 #![cfg(target_os = "macos")]
 use nebulax_pty_session::{Session, Step};
-use nebulax_terminal::{Cell, Limits, OutputEvent, Size, Terminal, WidthPolicy};
+use nebulax_terminal::{CellView as Cell, Limits, OutputEvent, Size, Terminal, WidthPolicy};
 use std::io;
 use std::process::Command;
 use std::time::{Duration, Instant};
@@ -30,7 +30,7 @@ fn text(session: &Session) -> String {
         .screen()
         .iter()
         .flat_map(|r| r.cells())
-        .filter_map(|c| match c {
+        .filter_map(|c| match c.view() {
             Cell::Lead { cluster, .. } => Some(cluster.chars().collect::<String>()),
             _ => None,
         })

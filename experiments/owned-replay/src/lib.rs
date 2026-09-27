@@ -1,5 +1,5 @@
 //! Independent expectation adapter for the owned engine, including history and resize.
-use nebulax_terminal::{Cell, FeedOutcome, Limits, Size, Terminal, WidthPolicy};
+use nebulax_terminal::{CellView as Cell, FeedOutcome, Limits, Size, Terminal, WidthPolicy};
 use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 
@@ -26,13 +26,13 @@ fn state(t: &Terminal) -> Value {
                 .iter()
                 .enumerate()
                 .map(|(i, c)| {
-                    let (text, mut flags) = match c {
+                    let (text, mut flags) = match c.view() {
                         Cell::Empty => (" ".into(), 0),
                         Cell::Continuation => (" ".into(), 64),
                         Cell::WrapPadding => (" ".into(), 1024),
                         Cell::Lead { cluster, width } => (
                             cluster.chars().collect::<String>(),
-                            if *width == 2 { 32 } else { 0 },
+                            if width == 2 { 32 } else { 0 },
                         ),
                     };
                     if row.soft_wrapped() && i + 1 == t.size().columns {

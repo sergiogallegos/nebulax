@@ -1,4 +1,4 @@
-use nebulax_terminal::{Cell, FeedOutcome, Limits, Size, Terminal, WidthPolicy};
+use nebulax_terminal::{CellView as Cell, FeedOutcome, Limits, Size, Terminal, WidthPolicy};
 
 fn terminal(columns: usize, lines: usize) -> Terminal {
     Terminal::new(
@@ -13,7 +13,7 @@ fn text(t: &Terminal, row: usize) -> String {
     t.screen()[row]
         .cells()
         .iter()
-        .map(|c| match c {
+        .map(|c| match c.view() {
             Cell::Lead { cluster, .. } => cluster.chars().collect(),
             Cell::Empty => " ".to_owned(),
             _ => String::new(),
@@ -55,13 +55,13 @@ fn width_changes_at_edge_repair_cursor_cells_and_wrap() {
     assert_eq!(text(&wide, 1), "❤️!");
     assert_eq!(wide.cursor().column, 3);
     assert!(wide.screen()[0].soft_wrapped());
-    assert_eq!(wide.screen()[0].cells()[4], Cell::WrapPadding);
+    assert_eq!(wide.screen()[0].cells()[4].view(), Cell::WrapPadding);
     let (narrow, _) = assert_partitions(terminal(5, 3), "abc⌚\u{fe0e}!".as_bytes());
     assert_eq!(text(&narrow, 0), "abc⌚︎!");
     assert_eq!(narrow.cursor().row, 0);
     assert!(narrow.cursor().wrap_pending);
     assert!(matches!(
-        narrow.screen()[0].cells()[3],
+        narrow.screen()[0].cells()[3].view(),
         Cell::Lead { width: 1, .. }
     ));
 }
@@ -74,7 +74,7 @@ fn erasing_or_overwriting_half_a_wide_cell_clears_the_owner() {
             !t.screen()[0]
                 .cells()
                 .iter()
-                .any(|c| matches!(c, Cell::Continuation))
+                .any(|c| matches!(c.view(), Cell::Continuation))
         );
         assert!(!text(&t, 0).contains('界'));
     }

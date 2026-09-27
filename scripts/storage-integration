@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""Serial before/after full-engine storage probe; baseline rebuilt from Git + overlay."""
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import io
+import json
+from pathlib import Path
+import platform
+import random
+import runpy
+import statistics
+import subprocess
+import tarfile
+import tempfile
+
+ROOT = Path(__file__).resolve().parent.parent
+BASE = "3217fb0"
+SCENARIOS = ("visible", "ascii", "mixed", "dense", "long")
+
+
+def run(args, cwd=ROOT):
+    return subprocess.run(args, cwd=cwd, check=True, capture_output=True, text=True)
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write(path, value):
+    path.write_text(json.dumps(value, indent=2) + "\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--samples", type=int, default=10)
+    parser.add_argument("--warmups", type=int, default=2)
+    args = parser.parse_args()
+    if args.samples < 2 or args.warmups < 1:
+        parser.error("need at least two measured samples and one warmup")
+    output = args.output.resolve()
+    output.mkdir(parents=True, exist_ok=False)
+    sources = runpy.run_path(str(ROOT / "scripts/replay"))["source_manifest"]
+    before = sources()
+    started = datetime.now(timezone.utc).isoformat()
+    patch = ROOT / "experiments/storage-integration/baseline.patch"
+    baseline_commit = run(["git", "rev-parse", BASE]).stdout.strip()
+    archive = subprocess.check_output(["git", "archive", baseline_commit], cwd=ROOT)
+    commands = []
+    raw = []
+    with tempfile.TemporaryDirectory(prefix="storage-baseline-", dir=ROOT / "target") as temporary:
+        old = Path(temporary)
+        with tarfile.open(fileobj=io.BytesIO(archive)) as source:
+            source.extractall(old, filter="data")
+        command = ["patch", "-p1", "-i", str(patch)]
+        result = run(command, old)
+        commands.append({"command": command, "cwd": str(old), "stdout": result.stdout, "stderr": result.stderr})
+        binaries = {}
+        for variant, tree in (("baseline", old), ("compact", ROOT)):
+            command = ["cargo", "build", "--offline", "--locked", "--release", "-p", "nebulax-terminal", "--example", "storage_probe", "--target-dir", str(tree / "target")]
+            result = run(command, tree)
+            commands.append({"command": command, "cwd": str(tree), "stdout": result.stdout, "stderr": result.stderr})
+            binaries[variant] = tree / "target/release/examples/storage_probe"
+        assert digest(old / "crates/terminal/examples/storage_probe.rs") == digest(ROOT / "crates/terminal/examples/storage_probe.rs"), "workload source must be identical"
+        executable_hashes = {name: digest(path) for name, path in binaries.items()}
+        rng = random.Random(20260926)
+        for repetition in range(-args.warmups, args.samples):
+            pairs = [(variant, scenario) for variant in binaries for scenario in SCENARIOS]
+            rng.shuffle(pairs)
+            for variant, scenario in pairs:
+                value = json.loads(run([str(binaries[variant]), scenario]).stdout)
+                assert value["cell_size"] == (40 if variant == "baseline" else 16)
+                assert value["reclaimed_cluster_bytes"] == 0
+                raw.append({"variant": variant, "repetition": repetition, "warmup": repetition < 0, **value})
+            print(f"Storage repetition {repetition + 1}/{args.samples} complete", flush=True)
+    summary = {}
+    for scenario in SCENARIOS:
+        records = [v for v in raw if v["scenario"] == scenario]
+        for field in ("checksum", "resized_checksum", "snapshot_bytes"):
+            assert len({v[field] for v in records}) == 1, (scenario, field)
+        summary[scenario] = {}
+        for variant in ("baseline", "compact"):
+            values = [v for v in records if v["variant"] == variant and not v["warmup"]]
+            deterministic = {key: values[0][key] for key in values[0] if key not in ("repetition", "warmup", "variant", "scenario") and not key.endswith("_ns")}
+            assert all(all(v[key] == value for key, value in deterministic.items()) for v in values)
+            summary[scenario][variant] = {**deterministic, "timings_ns": {key: {"median": statistics.median(v[key] for v in values), "min": min(v[key] for v in values), "max": max(v[key] for v in values)} for key in ("fill_ns", "scroll_ns", "resize_ns", "snapshot_ns")}}
+    stable = before == sources()
+    assert stable, "source changed during measurement"
+    write(output / "sources.json", before)
+    write(output / "commands.json", commands)
+    write(output / "summary.json", {"success": True, "measured_samples": args.samples * 10, "warmups": args.warmups * 10, "scenarios": summary})
+    (output / "samples.jsonl").write_text("".join(json.dumps(v) + "\n" for v in raw))
+    write(output / "environment.json", {"started_utc": started, "finished_utc": datetime.now(timezone.utc).isoformat(), "git_commit": run(["git", "rev-parse", "HEAD"]).stdout.strip(), "git_dirty": bool(run(["git", "status", "--porcelain"]).stdout), "baseline_commit": baseline_commit, "baseline_patch_sha256": digest(patch), "executable_sha256": executable_hashes, "rustc": run(["rustc", "-Vv"]).stdout.strip(), "platform": platform.platform(), "python": platform.python_version(), "sources_unchanged_during_run": stable, "measurement_kind": "full_engine_capacity_and_exploratory_timing", "limits": "serial fresh processes; uncontrolled background/thermal/frequency conditions; capacity excludes allocator overhead and RSS"})
+    write(output / "artifacts.json", {p.name: digest(p) for p in sorted(output.iterdir()) if p.is_file()})
+    print(f"Retained storage comparison: {output}")
+
+
+if __name__ == "__main__":
+    main()

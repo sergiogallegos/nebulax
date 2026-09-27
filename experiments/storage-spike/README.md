@@ -12,7 +12,7 @@ The recorder builds in release mode, rejects existing output directories and rec
 
 ## Compared layouts
 
-- Baseline: mirrors the current 40-byte `Cell` and nested `Cluster`, with incremental `Vec<char>` growth for extra scalars. It uses a row deque with IDs/generations, so its row metadata/scroll machinery differs from the current engine. It has no style storage; this conservative comparison does not predict the cost of adding styles to it.
+- Baseline: preserves the original 40-byte `Cell` and nested `Cluster`, with incremental `Vec<char>` growth for extra scalars. It uses a row deque with IDs/generations, so its row metadata/scroll machinery differs from the original engine. It has no style storage; this conservative comparison does not predict the cost of adding styles to it.
 - Compact 8: a tagged 32-bit scalar/cluster-slot payload and 32-bit style ID.
 - Compact 16: the same payload/style ID plus 32-bit hyperlink and attribute fields. Style/hyperlink/attribute fields are reserved and zero; dictionaries, interning and style churn are **not** implemented or measured.
 - Both compact variants use lazily allocated chunks of up to 64 rows and a bounded cluster slot arena. Each live multi-scalar owner has one slot, with no deduplication. Scroll/overwrite releases slots; their text buffers remain available for reuse. An explicit trim frees unused text capacity but retains the slot directory and row chunks. Arena exhaustion asserts in this test prototype; production would need a typed resource policy and byte budgeting.
@@ -36,3 +36,5 @@ Snapshots copy visible cells to a common 16-byte cell format and flatten uncommo
 `capacity_bytes` accounts for owned `Vec`/`VecDeque` capacities, nested text allocations, row/chunk/slot directories, and snapshot row payloads. It excludes allocator metadata/size classes, private `Arc` headers, stack objects, executable/framework pages, inputs, OS overhead and RSS. `container_growths` counts observed instrumented capacity increases (plus `Arc` row payload creations); `requested_capacity_bytes` sums their new capacities, not resident bytes or global allocator events. Repacking's grid peak excludes separately reported in-flight snapshots. Instrumentation runs for all variants and adds overhead to these timings. Identical checksums and capacity/accounting results are required across repetitions and variants where applicable.
 
 This spike establishes tradeoffs and API/lifetime constraints. It does not authorize removing resource caps or importing this prototype wholesale into the terminal core.
+
+The later [core storage integration](../storage-integration/README.md) uses a different 16-byte directly owned cell, with no global arena. This experiment and its earlier raw results remain historical comparisons.

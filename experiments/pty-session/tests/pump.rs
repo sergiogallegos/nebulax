@@ -1,5 +1,5 @@
 use nebulax_pty_session::{Pump, READ_CAPACITY, Step};
-use nebulax_terminal::{Cell, Limits, OutputEvent, Size, Terminal, WidthPolicy};
+use nebulax_terminal::{CellView as Cell, Limits, OutputEvent, Size, Terminal, WidthPolicy};
 use std::collections::VecDeque;
 use std::io::{self, Read, Write};
 
@@ -90,7 +90,7 @@ fn text(pump: &Pump) -> String {
         .screen()
         .iter()
         .flat_map(|r| r.cells())
-        .filter_map(|c| match c {
+        .filter_map(|c| match c.view() {
             Cell::Lead { cluster, .. } => Some(cluster.chars().collect::<String>()),
             _ => None,
         })

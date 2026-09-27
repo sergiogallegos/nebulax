@@ -5,7 +5,7 @@ use nebulax_terminal::parser::{
     Event, Header, MAX_HEADER_BYTES, MAX_OSC_BYTES, MAX_PARAMETERS, Parser, StringKind,
 };
 use nebulax_terminal::{
-    Cell, FeedOutcome, Limits, OutputEvent, Size, Terminal, TitleTarget, WidthPolicy,
+    CellView as Cell, FeedOutcome, Limits, OutputEvent, Size, Terminal, TitleTarget, WidthPolicy,
 };
 
 fn terminal() -> Terminal {
@@ -41,7 +41,7 @@ fn text(t: &Terminal) -> String {
     t.screen()[0]
         .cells()
         .iter()
-        .filter_map(|c| match c {
+        .filter_map(|c| match c.view() {
             Cell::Lead { cluster, .. } => Some(cluster.chars().collect::<String>()),
             _ => None,
         })

@@ -1,0 +1,49 @@
+[
+  {
+    "command": [
+      "patch",
+      "-p1",
+      "-i",
+      "/Users/sergiogallegos/projects/nebulax/experiments/storage-integration/baseline.patch"
+    ],
+    "cwd": "/Users/sergiogallegos/projects/nebulax/target/storage-baseline-lgemwxb2",
+    "stdout": "patching file 'crates/terminal/src/lib.rs'\npatching file 'crates/terminal/src/storage.rs'\npatching file 'crates/terminal/examples/storage_probe.rs'\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "cargo",
+      "build",
+      "--offline",
+      "--locked",
+      "--release",
+      "-p",
+      "nebulax-terminal",
+      "--example",
+      "storage_probe",
+      "--target-dir",
+      "/Users/sergiogallegos/projects/nebulax/target/storage-baseline-lgemwxb2/target"
+    ],
+    "cwd": "/Users/sergiogallegos/projects/nebulax/target/storage-baseline-lgemwxb2",
+    "stdout": "",
+    "stderr": "   Compiling nebulax-terminal v0.1.0 (/Users/sergiogallegos/projects/nebulax/target/storage-baseline-lgemwxb2/crates/terminal)\n    Finished `release` profile [optimized] target(s) in 0.70s\n"
+  },
+  {
+    "command": [
+      "cargo",
+      "build",
+      "--offline",
+      "--locked",
+      "--release",
+      "-p",
+      "nebulax-terminal",
+      "--example",
+      "storage_probe",
+      "--target-dir",
+      "/Users/sergiogallegos/projects/nebulax/target"
+    ],
+    "cwd": "/Users/sergiogallegos/projects/nebulax",
+    "stdout": "",
+    "stderr": "   Compiling nebulax-terminal v0.1.0 (/Users/sergiogallegos/projects/nebulax/crates/terminal)\n    Finished `release` profile [optimized] target(s) in 0.63s\n"
+  }
+]

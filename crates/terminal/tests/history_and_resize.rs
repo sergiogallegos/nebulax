@@ -1,4 +1,6 @@
-use nebulax_terminal::{Cell, Cursor, Limits, ResizeOutcome, Row, Size, Terminal, WidthPolicy};
+use nebulax_terminal::{
+    CellView as Cell, Cursor, Limits, ResizeOutcome, Row, Size, Terminal, WidthPolicy,
+};
 
 fn new(columns: usize, lines: usize, history_rows: usize, history_cells: usize) -> Terminal {
     Terminal::new(
@@ -16,7 +18,7 @@ fn new(columns: usize, lines: usize, history_rows: usize, history_cells: usize) 
 fn row_text(row: &Row) -> String {
     row.cells()
         .iter()
-        .map(|c| match c {
+        .map(|c| match c.view() {
             Cell::Lead { cluster, .. } => cluster.chars().collect(),
             Cell::Empty => " ".to_owned(),
             _ => String::new(),
@@ -44,11 +46,11 @@ fn logical(t: &Terminal) -> Vec<String> {
         } else {
             row.cells()
                 .iter()
-                .rposition(|c| !matches!(c, Cell::Empty | Cell::WrapPadding))
+                .rposition(|c| !matches!(c.view(), Cell::Empty | Cell::WrapPadding))
                 .map_or(0, |n| n + 1)
         };
         for c in &row.cells()[..end] {
-            match c {
+            match c.view() {
                 Cell::Lead { cluster, .. } => current.extend(cluster.chars()),
                 Cell::Empty => current.push(' '),
                 _ => {}
@@ -420,7 +422,7 @@ fn primary_crop_removes_dangling_wide_padding_and_keeps_partial_utf8() {
         }
     );
     assert_eq!(visible(&t), ["ab"]);
-    assert_eq!(t.screen()[0].cells()[2], Cell::Empty);
+    assert_eq!(t.screen()[0].cells()[2].view(), Cell::Empty);
     assert!(!t.screen()[0].soft_wrapped());
     t.feed(&[0x91, 0xa9]);
     assert_eq!(visible(&t), ["👩"]);

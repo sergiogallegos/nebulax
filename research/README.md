@@ -24,3 +24,5 @@ Current decisions live in [ADRs](../docs/adr/0001-approved-direction.md); resear
 - [Native window and basic input](2026-09-26-native-window.md): AppKit/Core Text drawing, bounded full-duplex input, native-event GUI tests and the clean dumb-shell baseline.
 
 - [Cursor/region/application-key integration](2026-09-26-cursor-regions.md): screen state ownership, thirteen core tests, live PTY negotiation and native protocol regression.
+
+- [Integrated compact storage](2026-09-26-compact-storage.md): real 16-byte cells, direct tail reclamation, row reuse, 100-sample before/after measurements and native regression.

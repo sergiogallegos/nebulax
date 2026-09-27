@@ -1,6 +1,6 @@
 #![cfg(target_os = "macos")]
 use nebulax_pty_session::{Session, input::Input};
-use nebulax_terminal::{Cell, Limits, Size, Terminal, WidthPolicy, input::Key};
+use nebulax_terminal::{CellView as Cell, Limits, Size, Terminal, WidthPolicy, input::Key};
 use std::process::Command;
 use std::time::{Duration, Instant};
 
@@ -37,7 +37,7 @@ fn clean_dumb_shell_prompt_command_echo_and_exit_use_the_existing_protocol_subse
             .screen()
             .iter()
             .flat_map(|r| r.cells())
-            .filter_map(|c| match c {
+            .filter_map(|c| match c.view() {
                 Cell::Lead { cluster, .. } => Some(cluster.chars().collect::<String>()),
                 _ => None,
             })
@@ -62,7 +62,7 @@ fn clean_dumb_shell_prompt_command_echo_and_exit_use_the_existing_protocol_subse
         .map(|r| {
             r.cells()
                 .iter()
-                .filter_map(|c| match c {
+                .filter_map(|c| match c.view() {
                     Cell::Lead { cluster, .. } => Some(cluster.chars().collect::<String>()),
                     _ => None,
                 })

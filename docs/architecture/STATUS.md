@@ -10,7 +10,7 @@ The project-level design review is accepted. We are now in **Phase 0A: validatin
 | Configuration/control | TOML/schema, shared policy, daemon-free v1, scoped CLI/MCP — accepted direction |
 | Terminal state | Implemented Rust graphemes, bounded history, alternate screen, resize/reflow and cursor/region state; broader protocol/compatibility work remains |
 | Parser/output | Bounded generic syntax, separate semantics and ordered typed replies/effects implemented with tested PTY transport; broader VT behavior remains open |
-| Storage/snapshots | Bounded owned visible snapshots implemented; compact grid storage/reclamation remains experimental |
+| Storage/snapshots | 16-byte directly owned cells, tail reclamation and bounded snapshots implemented; shared/chunked storage and performance tuning remain open |
 | Rendering/fonts | Metal/Core Text first to evaluate, wgpu comparison pending; implementation and performance choice open |
 | Runtime/scheduling | Worker-owned PTY, bounded transport and asynchronous close verified; production scheduling/job trees remain open |
 | Native integration | Private C/Swift lifetimes and minimal AppKit/basic-input path verified; IME/accessibility and deployment floor remain open |
@@ -33,3 +33,5 @@ The [foundation review](FOUNDATION_REVIEW.md) records the assessment of the owne
 [ADR 0009](../adr/0009-native-window-and-basic-input.md) records the minimal window/input path and its limits.
 
 [ADR 0010](../adr/0010-cursor-regions-and-input-modes.md) records screen-owned cursor/region behavior and terminal-wide application cursor-key encoding, verified through the native path.
+
+[ADR 0011](../adr/0011-compact-owned-cell-storage.md) records measured compact-cell integration, bounded direct ownership and the dense-cluster resize tradeoff.

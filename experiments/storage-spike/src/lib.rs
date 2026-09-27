@@ -158,8 +158,8 @@ pub trait StorageCell: Clone + Default {
     }
 }
 
-/// Mirrors current engine layout and per-cluster ownership. Synthetic storage
-/// workload omits parsing; equality of layouts is checked against the real types.
+/// Preserves the original 40-byte engine layout and per-cluster ownership. Synthetic storage
+/// workload omits parsing; logical content is checked against the current engine.
 #[derive(Clone)]
 pub struct DeepCluster {
     first: char,
@@ -784,7 +784,7 @@ pub fn layout() -> serde_json::Value {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nebulax_terminal::{Cell, Limits, Size, Terminal, WidthPolicy};
+    use nebulax_terminal::{CellView as Cell, Limits, Size, Terminal, WidthPolicy};
 
     fn filled<C: StorageCell>(chunked: bool, kind: &str, columns: usize, rows: usize) -> Grid<C> {
         let mut grid = Grid::new(columns, rows, chunked);
@@ -801,14 +801,14 @@ mod tests {
         for row in t.screen() {
             add(u64::from(row.soft_wrapped()));
             for cell in row.cells() {
-                add(match cell {
+                add(match cell.view() {
                     Cell::Empty => EMPTY,
-                    Cell::Lead { width, .. } => u32::from(*width),
+                    Cell::Lead { width, .. } => u32::from(width),
                     Cell::Continuation => TAIL,
                     Cell::WrapPadding => PAD,
                 } as u64);
                 add(0);
-                if let Cell::Lead { cluster, .. } = cell {
+                if let Cell::Lead { cluster, .. } = cell.view() {
                     for c in cluster.chars() {
                         add(c as u64);
                     }
@@ -822,7 +822,8 @@ mod tests {
     }
     #[test]
     fn layouts_and_synthetic_content_match_current_engine() {
-        assert_eq!(size_of::<DeepCell>(), size_of::<Cell>());
+        assert_eq!(size_of::<DeepCell>(), 40); // Historical baseline remains unchanged.
+        assert_eq!(size_of::<nebulax_terminal::Cell>(), 16);
         assert_eq!(size_of::<Cell8>(), 8);
         assert_eq!(size_of::<Cell16>(), 16);
         for kind in ["ascii", "mixed", "dense", "long"] {

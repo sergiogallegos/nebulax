@@ -1,5 +1,5 @@
 //! Owned screen storage and bounded resize. Original implementation.
-use crate::{Cell, Cursor, FeedOutcome, Limits, ResizeOutcome, Row, Size};
+use crate::{Cell, CellView, Cursor, FeedOutcome, Limits, ResizeOutcome, Row, Size};
 use std::collections::VecDeque;
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -117,23 +117,23 @@ impl Screen {
 
     pub fn erase(&mut self, row: usize, start: usize, end: usize) {
         let cells = &mut self.rows[row].cells;
-        let start = if matches!(cells[start], Cell::Continuation) {
+        let start = if matches!(cells[start].view(), CellView::Continuation) {
             start - 1
         } else {
             start
         };
-        let end = if end < cells.len() && matches!(cells[end], Cell::Continuation) {
+        let end = if end < cells.len() && matches!(cells[end].view(), CellView::Continuation) {
             end + 1
         } else {
             end
         };
-        cells[start..end].fill(Cell::Empty);
+        cells[start..end].fill(Cell::EMPTY);
     }
 
     fn break_wrap(&mut self, row: usize) {
         self.rows[row].soft_wrapped = false;
-        if self.rows[row].cells.last() == Some(&Cell::WrapPadding) {
-            *self.rows[row].cells.last_mut().unwrap() = Cell::Empty;
+        if self.rows[row].cells.last() == Some(&Cell::WRAP_PADDING) {
+            *self.rows[row].cells.last_mut().unwrap() = Cell::EMPTY;
         }
     }
 
@@ -142,8 +142,8 @@ impl Screen {
             self.break_wrap(self.top - 1);
         } else if let Some(row) = self.history.back_mut() {
             row.soft_wrapped = false;
-            if row.cells.last() == Some(&Cell::WrapPadding) {
-                *row.cells.last_mut().unwrap() = Cell::Empty;
+            if row.cells.last() == Some(&Cell::WRAP_PADDING) {
+                *row.cells.last_mut().unwrap() = Cell::EMPTY;
             }
         }
     }
@@ -154,15 +154,19 @@ impl Screen {
                 self.detach_region_start();
             }
             self.rows[self.top..=self.bottom].rotate_left(1);
-            let columns = self.rows[0].cells.len();
-            let old = std::mem::replace(&mut self.rows[self.bottom], Row::blank(columns));
             if self.top == 0 && self.bottom + 1 == self.rows.len() && history_capacity > 0 {
-                if self.history.len() == history_capacity {
-                    self.history.pop_front();
+                let blank = if self.history.len() == history_capacity {
+                    let mut row = self.history.pop_front().unwrap();
+                    row.clear();
                     out.history_evicted = true;
-                }
+                    row
+                } else {
+                    Row::blank(self.rows[0].cells.len())
+                };
+                let old = std::mem::replace(&mut self.rows[self.bottom], blank);
                 self.history.push_back(old);
             } else {
+                self.rows[self.bottom].clear();
                 out.scrolled_without_history = true;
             }
         } else if self.cursor.row + 1 < self.rows.len() {
@@ -178,7 +182,7 @@ impl Screen {
         if self.cursor.row == self.top {
             self.detach_region_start();
             self.rows[self.top..=self.bottom].rotate_right(1);
-            self.rows[self.top] = Row::blank(self.rows[0].cells.len());
+            self.rows[self.top].clear();
             self.break_wrap(self.bottom);
             out.scrolled_without_history = true;
         } else {
@@ -209,28 +213,33 @@ impl Screen {
                 return false;
             }
             for (i, cell) in row.cells.iter().enumerate() {
-                match cell {
-                    Cell::Lead { cluster, width } => {
+                if !cell.valid() {
+                    return false;
+                }
+                match cell.view() {
+                    CellView::Lead { cluster, width } => {
                         if !matches!(width, 1 | 2)
                             || cluster.scalar_count() > limits.cluster_scalars
                         {
                             return false;
                         }
-                        if *width == 2 && row.cells.get(i + 1) != Some(&Cell::Continuation) {
+                        if width == 2 && row.cells.get(i + 1) != Some(&Cell::CONTINUATION) {
                             return false;
                         }
                     }
-                    Cell::Continuation => {
-                        if i == 0 || !matches!(row.cells[i - 1], Cell::Lead { width: 2, .. }) {
+                    CellView::Continuation => {
+                        if i == 0
+                            || !matches!(row.cells[i - 1].view(), CellView::Lead { width: 2, .. })
+                        {
                             return false;
                         }
                     }
-                    Cell::WrapPadding => {
+                    CellView::WrapPadding => {
                         if i + 1 != size.columns {
                             return false;
                         }
                     }
-                    Cell::Empty => {}
+                    CellView::Empty => {}
                 }
             }
         }
@@ -248,22 +257,22 @@ impl Screen {
                 outcome.cropped_cells += old
                     .cells
                     .iter()
-                    .filter(|c| !matches!(c, Cell::Empty | Cell::WrapPadding))
+                    .filter(|c| !matches!(c.view(), CellView::Empty | CellView::WrapPadding))
                     .count();
                 continue;
             }
             for (x, c) in old.cells.iter().enumerate() {
                 if x >= size.columns {
                     outcome.cropped_cells +=
-                        usize::from(!matches!(c, Cell::Empty | Cell::WrapPadding));
+                        usize::from(!matches!(c.view(), CellView::Empty | CellView::WrapPadding));
                     continue;
                 }
-                result.rows[y].cells[x] = match c {
-                    Cell::Lead { width: 2, .. } if x + 1 == size.columns => {
+                result.rows[y].cells[x] = match c.view() {
+                    CellView::Lead { width: 2, .. } if x + 1 == size.columns => {
                         outcome.cropped_cells += 1;
-                        Cell::Empty
+                        Cell::EMPTY
                     }
-                    Cell::WrapPadding => Cell::Empty,
+                    CellView::WrapPadding => Cell::EMPTY,
                     _ => c.clone(),
                 };
             }
@@ -298,7 +307,7 @@ impl Screen {
                     || row
                         .cells
                         .iter()
-                        .any(|c| !matches!(c, Cell::Empty | Cell::WrapPadding))
+                        .any(|c| !matches!(c.view(), CellView::Empty | CellView::WrapPadding))
             })
             .map(|(i, _)| i + 1)
             .max()
@@ -318,7 +327,7 @@ impl Screen {
             if y == cursor_row {
                 let offset = row.cells[..cursor_end]
                     .iter()
-                    .filter(|c| !matches!(c, Cell::WrapPadding))
+                    .filter(|c| !matches!(c.view(), CellView::WrapPadding))
                     .count();
                 anchor = Some((logical_width + offset, self.cursor.wrap_pending));
             }
@@ -327,21 +336,21 @@ impl Screen {
             } else {
                 row.cells
                     .iter()
-                    .rposition(|c| !matches!(c, Cell::Empty | Cell::WrapPadding))
+                    .rposition(|c| !matches!(c.view(), CellView::Empty | CellView::WrapPadding))
                     .map_or(0, |i| i + 1)
                     .max(if y == cursor_row { cursor_end } else { 0 })
             };
             for c in &row.cells[..extent] {
-                match c {
-                    Cell::Empty => {
+                match c.view() {
+                    CellView::Empty => {
                         logical_width += 1;
-                        logical.push(Cell::Empty);
+                        logical.push(Cell::EMPTY);
                     }
-                    Cell::Lead { width, .. } => {
-                        logical_width += usize::from(*width);
+                    CellView::Lead { width, .. } => {
+                        logical_width += usize::from(width);
                         logical.push(c.clone());
                     }
-                    Cell::Continuation | Cell::WrapPadding => {}
+                    CellView::Continuation | CellView::WrapPadding => {}
                 }
             }
             if !row.soft_wrapped || y + 1 == significant {
@@ -389,7 +398,7 @@ impl ReflowSink {
             self.outcome.cropped_cells += row
                 .cells
                 .iter()
-                .filter(|c| !matches!(c, Cell::Empty | Cell::WrapPadding))
+                .filter(|c| !matches!(c.view(), CellView::Empty | CellView::WrapPadding))
                 .count();
         } else {
             if self.rows.len() == self.capacity {
@@ -411,8 +420,8 @@ impl ReflowSink {
         let mut consumed = 0;
         let mut mapped = false;
         for cell in cells {
-            let width = match &cell {
-                Cell::Lead { width, .. } => usize::from(*width),
+            let width = match cell.view() {
+                CellView::Lead { width, .. } => usize::from(width),
                 _ => 1,
             };
             // A saved pending-wrap position has left affinity at an exact edge.
@@ -426,7 +435,7 @@ impl ReflowSink {
             }
             if x + width > self.size.columns {
                 if x < self.size.columns {
-                    row.cells.push(Cell::WrapPadding);
+                    row.cells.push(Cell::WRAP_PADDING);
                 }
                 row.soft_wrapped = true;
                 self.push(row);
@@ -449,7 +458,7 @@ impl ReflowSink {
             }
             row.cells.push(cell);
             if width == 2 {
-                row.cells.push(Cell::Continuation);
+                row.cells.push(Cell::CONTINUATION);
             }
             x += width;
             consumed += width;
@@ -473,8 +482,8 @@ impl ReflowSink {
         if self.outcome.cropped_rows != 0 {
             let last = self.rows.back_mut().unwrap();
             last.soft_wrapped = false;
-            if last.cells.last() == Some(&Cell::WrapPadding) {
-                *last.cells.last_mut().unwrap() = Cell::Empty;
+            if last.cells.last() == Some(&Cell::WRAP_PADDING) {
+                *last.cells.last_mut().unwrap() = Cell::EMPTY;
             }
         }
         let mut cursor = self
@@ -490,7 +499,7 @@ impl ReflowSink {
             .rows
             .drain(..start)
             .map(|mut row| {
-                row.cells.resize(self.size.columns, Cell::Empty);
+                row.cells.resize(self.size.columns, Cell::EMPTY);
                 row
             })
             .collect();
@@ -500,7 +509,7 @@ impl ReflowSink {
             .into_iter()
             .take(self.size.lines)
             .map(|mut row| {
-                row.cells.resize(self.size.columns, Cell::Empty);
+                row.cells.resize(self.size.columns, Cell::EMPTY);
                 row
             })
             .collect();
@@ -560,20 +569,23 @@ mod tests {
         );
         assert_eq!(t.history().len(), 1);
         assert!(!t.history()[0].soft_wrapped());
-        assert!(t.screen()[0].cells().iter().all(|c| *c == Cell::Empty));
+        assert!(t.screen()[0].cells().iter().all(|c| *c == Cell::EMPTY));
         assert_eq!(t.cursor(), Cursor::default());
         t.resize(Size {
             columns: 8,
             lines: 4,
         })
         .unwrap();
-        assert!(matches!(t.screen()[0].cells()[0], Cell::Lead { .. }));
+        assert!(matches!(
+            t.screen()[0].cells()[0].view(),
+            CellView::Lead { .. }
+        ));
         assert!(!t.screen()[0].soft_wrapped());
         assert!(
             t.screen()[1..]
                 .iter()
                 .flat_map(Row::cells)
-                .all(|c| *c == Cell::Empty)
+                .all(|c| *c == Cell::EMPTY)
         );
         assert!(t.invariants_hold());
     }
