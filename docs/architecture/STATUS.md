@@ -8,7 +8,7 @@ The project-level design review is accepted. We are now in **Phase 0A: validatin
 | Main boundary | Owned Rust core, Swift/AppKit native UI, private C boundary — accepted |
 | Dependencies | Minimal justified dependencies; reference engines inform our design — accepted |
 | Configuration/control | TOML/schema, shared policy, daemon-free v1, scoped CLI/MCP — accepted direction |
-| Terminal state | Implemented Rust graphemes, bounded history, alternate screen and resize/reflow; broader protocol/compatibility work remains |
+| Terminal state | Implemented Rust graphemes, bounded history, alternate screen, resize/reflow and cursor/region state; broader protocol/compatibility work remains |
 | Parser/output | Bounded generic syntax, separate semantics and ordered typed replies/effects implemented with tested PTY transport; broader VT behavior remains open |
 | Storage/snapshots | Bounded owned visible snapshots implemented; compact grid storage/reclamation remains experimental |
 | Rendering/fonts | Metal/Core Text first to evaluate, wgpu comparison pending; implementation and performance choice open |
@@ -31,3 +31,5 @@ The [foundation review](FOUNDATION_REVIEW.md) records the assessment of the owne
 [ADR 0008](../adr/0008-snapshot-worker-and-private-ffi.md) records owned snapshot, worker cleanup and private C lifetime contracts.
 
 [ADR 0009](../adr/0009-native-window-and-basic-input.md) records the minimal window/input path and its limits.
+
+[ADR 0010](../adr/0010-cursor-regions-and-input-modes.md) records screen-owned cursor/region behavior and terminal-wide application cursor-key encoding, verified through the native path.

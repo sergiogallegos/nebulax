@@ -1,0 +1,15 @@
+# Cursor, region and application-key integration — 2026-09-26
+
+The native-window/input checkpoint was committed and pushed as `a096c0a` before this implementation. [ADR 0010](../docs/adr/0010-cursor-regions-and-input-modes.md) defines state scope, resize and unsupported-mode policies.
+
+Thirteen new core tests cover explicit row/cursor expectations, Unicode owner preservation, origin-relative replies, saved state across alternate buffers, invalid margins, whole-region history, reverse index, snapshot row damage, and resizing during every byte position of a mixed stream. Stream cases compare every two-way split and bytewise delivery to complete engine state. A stale history-wrap link found during review is covered independently: partial scrolling at the top of the viewport must not join retained history to unrelated content on the next reflow.
+
+A forced partial-write test changes modes while a reply or key is blocked. A queued key adopts the mode at selection; a started key retains its original bytes. A raw real-PTY child checks exact CPR and normal/application arrow bytes and produces expected region content. The prior clean Bash test remains unchanged.
+
+Full `scripts/verify` passes **106 Rust tests**, Unicode/hash/regeneration checks, formatting/Clippy, two Python tests (one optional live Ghostty test skipped), the unchanged Alacritty gap fingerprints, all **19 owned fixtures / 244 replays**, C/Swift lifetime checks and AppKit compilation. The configured non-macOS Rust subset contains 90 tests; hosted CI has not been inspected. Cargo manifests and lockfile are unchanged; the core still has zero dependencies.
+
+The [GUI evidence](../benchmarks/results/p0-11-cursor-regions/window.json) drives six native key events. After normal text/backspace/Return/Up, the child sets margins/origin, scrolls inside the region, saves/restores the cursor and verifies an exact origin-relative reply. A second Up must arrive as SS3 after the child enables application mode. Fixed text above/below the region survives; the window then resizes to 90 × 25 and closes after worker cleanup. The [grid bitmap](../benchmarks/results/p0-11-cursor-regions/window.png) was visually inspected. Source/binary hashes, commands and environment accompany it. This is correctness evidence, not physical keyboard latency or renderer performance.
+
+Two previous negative unit cases used `?1049;1h` because all lists were outside the earlier subset. That valid list now has positive coverage; the negatives retain atomic-rejection expectations using an unsupported mode. No shared replay fixture or historical evidence changed. The first GUI probe overwrote its normal-arrow marker with a fixed-row label; inspection caught the false observation. The label was moved and final success now explicitly requires every tested marker. That preliminary run remains under ignored `target/native-window/probe-first-run`.
+
+Next: integrate compact cell storage with bounded/reclaimable cluster ownership and snapshot lifetime tests, then styles/SGR. Native IME/accessibility, broader VT compatibility, real-shell profiles and production rendering/lifecycle remain separate gates.

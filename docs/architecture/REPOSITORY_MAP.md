@@ -10,10 +10,11 @@
 | Compare Ghostty as a research reference | `experiments/ghostty-reference/` | Pinned build, strict replay, explicit mode control |
 | Change owned Rust engine | `crates/terminal/` | Unicode conformance, stream/edit invariants, owned replay |
 | Change VT syntax, meaning or output flow | `crates/terminal/src/parser.rs`, `semantic.rs`, `output.rs`, ADR 0006 | `crates/terminal/tests/parser_and_output.rs`; existing owned replay |
+| Change cursor/regions/input modes | `crates/terminal/src/screen.rs`, `semantic.rs`, `input.rs`, ADR 0010 | `cursor_and_regions.rs`, PTY peer and AppKit protocol probe |
 | Change owned snapshots | `crates/terminal/src/snapshot.rs`, ADR 0008 | Lifetime/Unicode, skipped-frame versions, byte/generation bounds |
 | Change native view/basic input | `experiments/native-window/`, `crates/terminal/src/input.rs`, `experiments/pty-session/src/input.rs` | `scripts/native-window --self-test`; queue/ordering/duplex tests |
 | Change native worker/ABI | `experiments/pty-session/src/worker.rs`, `experiments/native-bridge/` | Worker/handle tests; compiled C and Swift via `scripts/native-bridge` |
-| Exercise PTY lifecycle/transport | `experiments/pty-session/`, `scripts/pty-session`, ADR 0007 | Twenty tests on macOS including workers/input/shell; portable pump/queue tests also on Ubuntu |
+| Exercise PTY lifecycle/transport | `experiments/pty-session/`, `scripts/pty-session`, ADR 0007 | Twenty-two tests on macOS including workers/input/shell; portable pump/queue tests also on Ubuntu |
 | Measure storage/snapshot alternatives | `experiments/storage-spike/`, `scripts/storage-spike` | Six correctness tests; serialized release samples with capacity accounting |
 | Replay owned engine | `experiments/owned-replay/`, `scripts/replay --engine owned` | All 19 fixtures strict / 244 replays; no deferrals |
 | Update Unicode data/rules | `third_party/unicode/`, `scripts/generate-unicode.py` | Stable verification, checksums, regeneration, official tests |

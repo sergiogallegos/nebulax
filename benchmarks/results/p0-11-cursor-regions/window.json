@@ -1,0 +1,13 @@
+{
+  "application_cursor_reply_and_region_seen" : true,
+  "arrow_seen" : true,
+  "child_reaped_before_window_close" : true,
+  "close_heartbeat_progress" : 1,
+  "native_key_events" : 6,
+  "outside_region_rows_preserved" : true,
+  "paint_count" : 6,
+  "resize_columns" : 90,
+  "resize_lines" : 25,
+  "success" : true,
+  "typed_text_seen" : true
+}

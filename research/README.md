@@ -22,3 +22,5 @@ Current decisions live in [ADRs](../docs/adr/0001-approved-direction.md); resear
 - [Snapshot, worker and private C/Swift boundary](2026-09-26-native-boundary.md): owned frames, bounded handles, worker cleanup and native lifetime evidence.
 
 - [Native window and basic input](2026-09-26-native-window.md): AppKit/Core Text drawing, bounded full-duplex input, native-event GUI tests and the clean dumb-shell baseline.
+
+- [Cursor/region/application-key integration](2026-09-26-cursor-regions.md): screen state ownership, thirteen core tests, live PTY negotiation and native protocol regression.

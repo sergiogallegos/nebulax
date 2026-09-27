@@ -246,9 +246,18 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
             testStage = 1
         } else if testStage == 1 && text.contains("You typed: Rust 界") {
             event("\u{f700}", code: 126)
-            window.setContentSize(NSSize(width: 948, height: 630))
             testStage = 2
-        } else if testStage == 2 && text.contains("Key: Up") && frame.view.columns == 90 && frame.view.lines == 25 {
+        } else if testStage == 2 && text.contains("APP READY") && text.contains("REGION OK") {
+            event("\u{f700}", code: 126)
+            testStage = 3
+        } else if testStage == 3 && text.contains("PROTOCOL OK") {
+            precondition(text.contains("APP KEY Up") && text.contains("FIXED TOP") && text.contains("FIXED BOTTOM"))
+            window.setContentSize(NSSize(width: 948, height: 630))
+            testStage = 4
+        } else if testStage == 4 && frame.view.columns == 90 && frame.view.lines == 25 {
+            precondition(text.contains("Key: Up") && text.contains("You typed: Rust 界"))
+            precondition(text.contains("PROTOCOL OK") && text.contains("APP KEY Up") && text.contains("REGION OK"))
+            precondition(text.contains("FIXED TOP") && text.contains("FIXED BOTTOM"))
             grid.displayIfNeeded()
             precondition(grid.paintCount > 0)
             renderedText = text
@@ -256,14 +265,16 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
             let bitmap = grid.bitmapImageRepForCachingDisplay(in: grid.bounds)!
             grid.cacheDisplay(in: grid.bounds, to: bitmap)
             try! bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: output).appendingPathComponent("window.png"))
-            testStage = 3
+            testStage = 5
             window.performClose(nil)
         }
     }
     func recordSuccess() {
-        let result: [String: Any] = ["success": true, "native_key_events": 5, "resize_columns": 90, "resize_lines": 25,
+        let result: [String: Any] = ["success": true, "native_key_events": 6, "resize_columns": 90, "resize_lines": 25,
                                   "paint_count": grid.paintCount, "close_heartbeat_progress": heartbeat - closeHeartbeat,
                                   "typed_text_seen": renderedText.contains("You typed: Rust 界"), "arrow_seen": renderedText.contains("Key: Up"),
+                                  "application_cursor_reply_and_region_seen": renderedText.contains("PROTOCOL OK") && renderedText.contains("APP KEY Up") && renderedText.contains("REGION OK"),
+                                  "outside_region_rows_preserved": renderedText.contains("FIXED TOP") && renderedText.contains("FIXED BOTTOM"),
                                   "child_reaped_before_window_close": true]
         try! JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: option("--output")!).appendingPathComponent("window.json"))
         completedTest = true

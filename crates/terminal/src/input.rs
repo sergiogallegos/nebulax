@@ -1,4 +1,4 @@
-//! Initial normal-cursor keyboard profile; future input modes belong here.
+//! Engine-owned normal/application cursor keyboard profile.
 use crate::Terminal;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -36,20 +36,20 @@ impl Key {
     }
 }
 impl Terminal {
-    /// Encoded on the engine owner at dispatch time. Application-cursor, kitty
-    /// keyboard, modified function keys and bracketed paste remain unsupported.
+    /// Encoded on the engine owner at dispatch time. Kitty keyboard, modified
+    /// function keys and bracketed paste remain unsupported.
     pub fn encode_key(&self, key: Key) -> Option<Vec<u8>> {
         Some(match key {
             Key::Enter => b"\r".to_vec(),
             Key::Backspace => vec![127],
             Key::Tab => vec![9],
             Key::Escape => vec![27],
-            Key::Up => b"\x1b[A".to_vec(),
-            Key::Down => b"\x1b[B".to_vec(),
-            Key::Left => b"\x1b[D".to_vec(),
-            Key::Right => b"\x1b[C".to_vec(),
-            Key::Home => b"\x1b[H".to_vec(),
-            Key::End => b"\x1b[F".to_vec(),
+            Key::Up => vec![27, if self.application_cursor { b'O' } else { b'[' }, b'A'],
+            Key::Down => vec![27, if self.application_cursor { b'O' } else { b'[' }, b'B'],
+            Key::Left => vec![27, if self.application_cursor { b'O' } else { b'[' }, b'D'],
+            Key::Right => vec![27, if self.application_cursor { b'O' } else { b'[' }, b'C'],
+            Key::Home => vec![27, if self.application_cursor { b'O' } else { b'[' }, b'H'],
+            Key::End => vec![27, if self.application_cursor { b'O' } else { b'[' }, b'F'],
             Key::Delete => b"\x1b[3~".to_vec(),
             Key::Control(c @ 0..=31) => vec![c],
             Key::Control(_) => return None,

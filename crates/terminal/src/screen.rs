@@ -1,12 +1,22 @@
 //! Owned screen storage and bounded resize. Original implementation.
-use crate::{Cell, Cursor, Limits, ResizeOutcome, Row, Size};
+use crate::{Cell, Cursor, FeedOutcome, Limits, ResizeOutcome, Row, Size};
 use std::collections::VecDeque;
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+struct SavedCursor {
+    cursor: Cursor,
+    origin: bool,
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) struct Screen {
     pub rows: Vec<Row>,
     pub history: VecDeque<Row>,
     pub cursor: Cursor,
+    pub origin: bool,
+    pub top: usize,
+    pub bottom: usize,
+    saved_cursor: SavedCursor,
 }
 
 impl Screen {
@@ -15,11 +25,178 @@ impl Screen {
             rows: (0..size.lines).map(|_| Row::blank(size.columns)).collect(),
             history: VecDeque::new(),
             cursor: Cursor::default(),
+            origin: false,
+            top: 0,
+            bottom: size.lines - 1,
+            saved_cursor: SavedCursor::default(),
         }
+    }
+
+    pub fn position(&mut self, row: usize, column: usize) {
+        let top = if self.origin { self.top } else { 0 };
+        let bottom = if self.origin {
+            self.bottom
+        } else {
+            self.rows.len() - 1
+        };
+        self.cursor = Cursor {
+            row: top.saturating_add(row).min(bottom),
+            column: column.min(self.rows[0].cells.len() - 1),
+            wrap_pending: false,
+        };
+    }
+
+    pub fn relative(&mut self, vertical: isize, horizontal: isize) {
+        let low = if self.cursor.row >= self.top {
+            self.top
+        } else {
+            0
+        };
+        let high = if self.cursor.row <= self.bottom {
+            self.bottom
+        } else {
+            self.rows.len() - 1
+        };
+        self.cursor.row = self
+            .cursor
+            .row
+            .saturating_add_signed(vertical)
+            .clamp(low, high);
+        self.cursor.column = self
+            .cursor
+            .column
+            .saturating_add_signed(horizontal)
+            .min(self.rows[0].cells.len() - 1);
+        self.cursor.wrap_pending = false;
+    }
+
+    pub fn set_origin(&mut self, enabled: bool) {
+        self.origin = enabled;
+        self.position(0, 0);
+    }
+
+    /// Wire coordinates are one-based; zero/omitted bounds mean full extent.
+    /// Invalid regions leave margins and cursor untouched.
+    pub fn set_margins(&mut self, top: usize, bottom: usize) -> bool {
+        let top = top.max(1) - 1;
+        let bottom = if bottom == 0 { self.rows.len() } else { bottom } - 1;
+        if top >= bottom || bottom >= self.rows.len() {
+            return false;
+        }
+        self.top = top;
+        self.bottom = bottom;
+        self.position(0, 0);
+        true
+    }
+
+    pub fn save_cursor(&mut self) {
+        self.saved_cursor = SavedCursor {
+            cursor: self.cursor,
+            origin: self.origin,
+        };
+    }
+
+    pub fn restore_cursor(&mut self) {
+        self.origin = self.saved_cursor.origin;
+        self.cursor = self.saved_cursor.cursor;
+        if self.origin {
+            self.cursor.row = self.cursor.row.clamp(self.top, self.bottom);
+        }
+    }
+
+    // Resize resets margins on both buffers, retains origin, and clamps the
+    // saved physical position. Only the active cursor participates in reflow.
+    fn resized_state(&self, result: &mut Self, size: Size) {
+        result.origin = self.origin;
+        result.saved_cursor = self.saved_cursor;
+        let saved = &mut result.saved_cursor.cursor;
+        saved.row = saved.row.min(size.lines - 1);
+        saved.column = saved.column.min(size.columns - 1);
+        saved.wrap_pending &= self.saved_cursor.cursor.column + 1 == size.columns;
+    }
+
+    pub fn erase(&mut self, row: usize, start: usize, end: usize) {
+        let cells = &mut self.rows[row].cells;
+        let start = if matches!(cells[start], Cell::Continuation) {
+            start - 1
+        } else {
+            start
+        };
+        let end = if end < cells.len() && matches!(cells[end], Cell::Continuation) {
+            end + 1
+        } else {
+            end
+        };
+        cells[start..end].fill(Cell::Empty);
+    }
+
+    fn break_wrap(&mut self, row: usize) {
+        self.rows[row].soft_wrapped = false;
+        if self.rows[row].cells.last() == Some(&Cell::WrapPadding) {
+            *self.rows[row].cells.last_mut().unwrap() = Cell::Empty;
+        }
+    }
+
+    fn detach_region_start(&mut self) {
+        if self.top > 0 {
+            self.break_wrap(self.top - 1);
+        } else if let Some(row) = self.history.back_mut() {
+            row.soft_wrapped = false;
+            if row.cells.last() == Some(&Cell::WrapPadding) {
+                *row.cells.last_mut().unwrap() = Cell::Empty;
+            }
+        }
+    }
+
+    pub fn down(&mut self, history_capacity: usize, out: &mut FeedOutcome) {
+        if self.cursor.row == self.bottom {
+            if self.top != 0 || self.bottom + 1 != self.rows.len() {
+                self.detach_region_start();
+            }
+            self.rows[self.top..=self.bottom].rotate_left(1);
+            let columns = self.rows[0].cells.len();
+            let old = std::mem::replace(&mut self.rows[self.bottom], Row::blank(columns));
+            if self.top == 0 && self.bottom + 1 == self.rows.len() && history_capacity > 0 {
+                if self.history.len() == history_capacity {
+                    self.history.pop_front();
+                    out.history_evicted = true;
+                }
+                self.history.push_back(old);
+            } else {
+                out.scrolled_without_history = true;
+            }
+        } else if self.cursor.row + 1 < self.rows.len() {
+            self.cursor.row += 1;
+        } else {
+            self.break_wrap(self.cursor.row);
+        }
+        self.cursor.wrap_pending = false;
+        out.changed = true;
+    }
+
+    pub fn reverse_index(&mut self, out: &mut FeedOutcome) {
+        if self.cursor.row == self.top {
+            self.detach_region_start();
+            self.rows[self.top..=self.bottom].rotate_right(1);
+            self.rows[self.top] = Row::blank(self.rows[0].cells.len());
+            self.break_wrap(self.bottom);
+            out.scrolled_without_history = true;
+        } else {
+            self.cursor.row = self.cursor.row.saturating_sub(1);
+        }
+        self.cursor.wrap_pending = false;
+        out.changed = true;
     }
 
     pub fn valid(&self, size: Size, limits: Limits) -> bool {
         if self.rows.len() != size.lines
+            || self.top > self.bottom
+            || self.bottom >= size.lines
+            || (self.origin && !(self.top..=self.bottom).contains(&self.cursor.row))
+            || self.saved_cursor.cursor.row >= size.lines
+            || self.saved_cursor.cursor.column >= size.columns
+            || (self.saved_cursor.cursor.wrap_pending
+                && self.saved_cursor.cursor.column + 1 != size.columns)
             || self.cursor.row >= size.lines
             || self.cursor.column >= size.columns
             || (self.cursor.wrap_pending && self.cursor.column + 1 != size.columns)
@@ -101,6 +278,7 @@ impl Screen {
         if outcome.cropped_rows != 0 {
             result.rows.last_mut().unwrap().soft_wrapped = false;
         }
+        self.resized_state(&mut result, size);
         (result, outcome)
     }
 
@@ -171,7 +349,9 @@ impl Screen {
                 logical_width = 0;
             }
         }
-        sink.finish()
+        let (mut result, outcome) = sink.finish();
+        self.resized_state(&mut result, size);
+        (result, outcome)
     }
 }
 
@@ -330,6 +510,10 @@ impl ReflowSink {
                 rows,
                 history,
                 cursor,
+                origin: false,
+                top: 0,
+                bottom: self.size.lines - 1,
+                saved_cursor: SavedCursor::default(),
             },
             self.outcome,
         )

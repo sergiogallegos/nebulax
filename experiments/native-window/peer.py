@@ -17,6 +17,22 @@ def write(text):
         data = data[os.write(1, data):]
 
 
+def protocol_probe():
+    # Exercise the same native key path after the child changes the engine mode.
+    # Fixed rows bracket a scrolling region; the reply verifies saved origin.
+    write("\x1b[13;1HFIXED TOP\x1b[20;1HFIXED BOTTOM")
+    write("\x1b[14;18r\x1b[?1;6h\x1b[5;1Hfirst\r\nREGION OK")
+    write("\x1b7\x1b[HAPP READY\x1b8\x1b[6n")
+    expected = b"\x1b[5;10R\x1bOA"
+    actual = b""
+    while len(actual) < len(expected):
+        part = os.read(0, len(expected) - len(actual))
+        assert part
+        actual += part
+    assert actual == expected, (actual, expected)
+    write("\x1b[2;1HAPP KEY Up\x1b[?1;6l\x1b[r\x1b[22;1HPROTOCOL OK")
+
+
 write("NEBULAX\r\n\r\nWelcome to your terminal.\r\n")
 write("Unicode: cafe\u0301  界  👩‍💻\r\n\r\n")
 write("Type a line and press Return. Arrow keys are recognized.\r\n")
@@ -33,6 +49,8 @@ while True:
         known = {b"\x1b[A": "Up", b"\x1b[B": "Down", b"\x1b[C": "Right", b"\x1b[D": "Left", b"\x1b[H": "Home", b"\x1b[F": "End", b"\x1b[3~": "Delete"}
         if escape in known:
             write(f"\r\nKey: {known[escape]}\r\n> {line}")
+            if "--test" in sys.argv and escape == b"\x1b[A":
+                protocol_probe()
             escape = b""
         elif len(escape) >= 4 or not any(key.startswith(escape) for key in known):
             escape = b""

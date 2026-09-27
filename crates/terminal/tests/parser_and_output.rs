@@ -195,7 +195,7 @@ fn malformed_syntax_recovers_without_parameter_reinterpretation() {
         assert!(parsed.contains(&Event::Invalid));
         assert!(!parsed.iter().any(|e| matches!(e, Event::Csi { .. })));
     }
-    let (t, output, out) = partitions(b"abc\x1b[1:2D\x1b[?1049;1hZ");
+    let (t, output, out) = partitions(b"abc\x1b[1:2D\x1b[?1049;999hZ");
     assert!(out.unsupported && !t.is_alternate());
     assert!(output.is_empty());
     assert_eq!(text(&t), "abcZ");

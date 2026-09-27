@@ -185,6 +185,7 @@ pub struct Terminal {
     decoder: Decoder,
     parser: Parser,
     output: Output,
+    application_cursor: bool,
     segmenter: GraphemeBreak,
     last_lead: Option<(usize, usize)>,
 }
@@ -216,6 +217,7 @@ impl Terminal {
             decoder: Decoder::default(),
             parser: Parser::default(),
             output: Output::default(),
+            application_cursor: false,
             segmenter: GraphemeBreak::default(),
             last_lead: None,
         })
@@ -359,41 +361,16 @@ impl Terminal {
     }
 
     fn erase(&mut self, row: usize, start: usize, end: usize) {
-        let cells = &mut self.active.rows[row].cells;
-        let start = if matches!(cells[start], Cell::Continuation) {
-            start - 1
-        } else {
-            start
-        };
-        let end = if end < cells.len() && matches!(cells[end], Cell::Continuation) {
-            end + 1
-        } else {
-            end
-        };
-        cells[start..end].fill(Cell::Empty);
+        self.active.erase(row, start, end);
     }
 
     fn down(&mut self, out: &mut FeedOutcome) {
-        if self.active.cursor.row + 1 < self.size.lines {
-            self.active.cursor.row += 1;
+        let cap = if self.is_alternate() {
+            0
         } else {
-            self.active.rows.rotate_left(1);
-            let old = std::mem::replace(
-                self.active.rows.last_mut().unwrap(),
-                Row::blank(self.size.columns),
-            );
-            let cap = self.history_capacity(self.size.columns);
-            if self.saved_primary.is_none() && cap > 0 {
-                if self.active.history.len() == cap {
-                    self.active.history.pop_front();
-                    out.history_evicted = true;
-                }
-                self.active.history.push_back(old);
-            } else {
-                out.scrolled_without_history = true;
-            }
-        }
-        out.changed = true;
+            self.history_capacity(self.size.columns)
+        };
+        self.active.down(cap, out);
     }
 
     fn wrap(&mut self, out: &mut FeedOutcome) {

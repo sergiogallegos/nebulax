@@ -27,3 +27,5 @@ The [PTY lifecycle run](results/p0-08-pty-session/summary.json) retains eleven t
 The [native-boundary run](results/p0-09-native-boundary/summary.json) records 70 relevant Rust tests plus compiled C and Swift lifetime checks, raw commands, source hashes and native binary hashes. [Findings](../research/2026-09-26-native-boundary.md) distinguish the owned snapshot/worker contract from still-open rendering and performance work.
 
 The [native-window GUI run](results/p0-10-native-window/window.json) retains event/resize/close observations, a [rendered grid bitmap](results/p0-10-native-window/window.png), source/binary hashes and command metadata. This is native correctness evidence, not physical input latency or renderer performance.
+
+The [cursor/region native run](results/p0-11-cursor-regions/window.json) extends that path with origin-relative replies, scrolling between fixed rows and application-mode key encoding. [Findings](../research/2026-09-26-cursor-regions.md) describe the independent core/transport tests and compatibility limits.

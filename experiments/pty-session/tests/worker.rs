@@ -114,3 +114,21 @@ fn worker_sends_native_text_and_keys_to_a_real_pty_peer() {
     assert_eq!(w.latest(0).unwrap().text(), b"READYINPUT OK");
     assert!(w.input(Input::Text("late".into())).is_err());
 }
+
+#[test]
+fn pty_peer_negotiates_cursor_modes_origin_replies_and_region_scroll() {
+    use nebulax_pty_session::input::Input;
+    use nebulax_terminal::input::Key;
+    let w = start(
+        "python3",
+        &[concat!(env!("CARGO_MANIFEST_DIR"), "/tests/cursor_peer.py")],
+    );
+    wait(|| w.latest(0).is_some_and(|f| f.text() == b"TOPREADYbottom"));
+    w.input(Input::Key(Key::Up)).unwrap();
+    wait(|| w.latest(0).is_some_and(|f| f.text() == b"TOPNORMALSCROLL"));
+    w.input(Input::Key(Key::Left)).unwrap();
+    wait(|| w.is_finished());
+    assert_eq!(w.status().phase, Phase::Exited);
+    assert_eq!(w.status().exit_code, 0);
+    assert_eq!(w.latest(0).unwrap().text(), b"TOPPASSSCROLL");
+}

@@ -320,3 +320,30 @@ fn bounded_echo_is_drained_during_a_partial_input_write_to_avoid_deadlock() {
     assert_eq!(text(&pump), "abcdefghijklmnop");
     assert_eq!(pump.retained_event_bytes(), 0);
 }
+
+#[test]
+fn queued_keys_use_dispatch_time_modes_but_partial_key_writes_are_immutable() {
+    use nebulax_pty_session::input::Input;
+    use nebulax_terminal::input::Key;
+    let mut wire = Wire::new(b"\x1b[5n");
+    wire.eof = false;
+    wire.write_budget = 1;
+    let mut pump = Pump::new(engine());
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::WriteBlocked);
+    pump.queue_input(Input::Key(Key::Up)).unwrap();
+    wire.input.extend(b"\x1b[?1h");
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::Yield);
+    wire.write_budget = 64;
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::ReadBlocked);
+    assert_eq!(wire.output, b"\x1b[0n\x1bOA");
+
+    pump.queue_input(Input::Key(Key::Down)).unwrap();
+    wire.write_budget = 1;
+    wire.input.extend(b"\x1b[?1l");
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::Yield);
+    pump.queue_input(Input::Key(Key::Left)).unwrap();
+    wire.write_budget = 64;
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::ReadBlocked);
+    assert_eq!(wire.output, b"\x1b[0n\x1bOA\x1bOB\x1b[D");
+    assert!(!pump.diagnostics().unsupported);
+}

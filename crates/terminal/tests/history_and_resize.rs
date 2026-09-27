@@ -310,7 +310,7 @@ fn malformed_private_modes_do_not_trigger_screen_switching() {
     for sequence in [
         b"\x1b[??1049h".as_slice(),
         b"\x1b[1049h",
-        b"\x1b[?1049;1h",
+        b"\x1b[?1049;999h", // A supported mode list now has separate positive coverage.
         b"\x1b[?1048h",
     ] {
         let mut t = new(8, 2, 16, 128);
