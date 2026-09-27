@@ -1,5 +1,5 @@
 //! Owned visible frames. No engine borrows, cluster handles, history or I/O.
-use crate::{CellView, Cursor, Size, Terminal};
+use crate::{CellView, Cursor, Size, Terminal, style::Style};
 
 pub const MAX_SNAPSHOT_BYTES: usize = 2 * 1024 * 1024;
 
@@ -12,6 +12,8 @@ pub struct SnapshotCell {
     pub width: u8,
     /// 0 empty, 1 lead, 2 continuation, 3 wrap padding.
     pub kind: u8,
+    pub style_id: u16,
+    pub reserved: u16,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SnapshotError {
@@ -28,6 +30,7 @@ pub struct Snapshot {
     text: Box<[u8]>,
     row_versions: Box<[u64]>,
     row_wraps: Box<[u8]>,
+    styles: Box<[Style]>,
 }
 impl Snapshot {
     /// Previous must be the immediately preceding published frame for this
@@ -39,7 +42,9 @@ impl Snapshot {
             .ok_or(SnapshotError::GenerationExhausted)?;
         let size = terminal.size();
         let count = size.columns * size.lines; // Validated terminal geometry.
-        let metadata = count * std::mem::size_of::<SnapshotCell>() + size.lines * 9;
+        let metadata = count * std::mem::size_of::<SnapshotCell>()
+            + size.lines * 9
+            + terminal.styles.len() * std::mem::size_of::<Style>();
         let mut text_bytes = 0usize;
         for row in terminal.screen() {
             for cell in row.cells() {
@@ -62,7 +67,10 @@ impl Snapshot {
         for row in terminal.screen() {
             row_wraps.push(u8::from(row.soft_wrapped()));
             for cell in row.cells() {
-                let mut view = SnapshotCell::default();
+                let mut view = SnapshotCell {
+                    style_id: cell.style_id(),
+                    ..SnapshotCell::default()
+                };
                 match cell.view() {
                     CellView::Empty => {}
                     CellView::Continuation => view.kind = 2,
@@ -89,6 +97,7 @@ impl Snapshot {
             text: text.into_boxed_slice(),
             row_versions: vec![generation; size.lines].into_boxed_slice(),
             row_wraps: row_wraps.into_boxed_slice(),
+            styles: terminal.styles.palette().collect(),
         };
         if let Some(old) = previous.filter(|p| p.size == size && p.alternate == result.alternate) {
             for row in 0..size.lines {
@@ -106,8 +115,17 @@ impl Snapshot {
                 .iter()
                 .zip(&old.cells[range])
                 .all(|(a, b)| {
-                    a.kind == b.kind && a.width == b.width && self.cell_text(a) == old.cell_text(b)
+                    a.kind == b.kind
+                        && a.width == b.width
+                        && self.cell_text(a) == old.cell_text(b)
+                        && self.cell_style(a) == old.cell_style(b)
                 })
+    }
+    pub fn styles(&self) -> &[Style] {
+        &self.styles
+    }
+    pub fn cell_style(&self, cell: &SnapshotCell) -> Option<&Style> {
+        self.styles.get(usize::from(cell.style_id))
     }
     pub fn cell_text(&self, cell: &SnapshotCell) -> Option<&str> {
         let start = cell.text_offset as usize;
@@ -143,6 +161,7 @@ impl Snapshot {
             + self.text.len()
             + self.row_versions.len() * 8
             + self.row_wraps.len()
+            + std::mem::size_of_val(&*self.styles)
     }
 }
 

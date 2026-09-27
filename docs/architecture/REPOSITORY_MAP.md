@@ -12,6 +12,7 @@
 | Change VT syntax, meaning or output flow | `crates/terminal/src/parser.rs`, `semantic.rs`, `output.rs`, ADR 0006 | `crates/terminal/tests/parser_and_output.rs`; existing owned replay |
 | Change cursor/regions/input modes | `crates/terminal/src/screen.rs`, `semantic.rs`, `input.rs`, ADR 0010 | `cursor_and_regions.rs`, PTY peer and AppKit protocol probe |
 | Change compact storage/ownership | `crates/terminal/src/cell.rs`, `storage.rs`, `screen.rs`, ADR 0011 | Seven storage tests; `scripts/storage-integration` serial before/after measurements |
+| Change styles/SGR | `crates/terminal/src/style.rs`, `semantic.rs`, `snapshot.rs`, ADR 0012 | Twelve style tests, C/Swift palettes and AppKit style probe |
 | Change owned snapshots | `crates/terminal/src/snapshot.rs`, ADR 0008 | Lifetime/Unicode, skipped-frame versions, byte/generation bounds |
 | Change native view/basic input | `experiments/native-window/`, `crates/terminal/src/input.rs`, `experiments/pty-session/src/input.rs` | `scripts/native-window --self-test`; queue/ordering/duplex tests |
 | Change native worker/ABI | `experiments/pty-session/src/worker.rs`, `experiments/native-bridge/` | Worker/handle tests; compiled C and Swift via `scripts/native-bridge` |

@@ -7,17 +7,21 @@ pub struct StorageUsage {
     pub row_bytes: usize,
     pub cluster_bytes: usize,
     pub cluster_allocations: usize,
+    pub style_bytes: usize,
 }
 impl StorageUsage {
     pub fn heap_bytes(self) -> usize {
-        self.cell_bytes + self.row_bytes + self.cluster_bytes
+        self.cell_bytes + self.row_bytes + self.cluster_bytes + self.style_bytes
     }
 }
 impl Terminal {
     /// Includes active and hidden primary capacities. Excludes parser/output,
     /// transient resize copies, allocator metadata and process RSS.
     pub fn storage_usage(&self) -> StorageUsage {
-        let mut result = StorageUsage::default();
+        let mut result = StorageUsage {
+            style_bytes: self.styles.heap_bytes(),
+            ..StorageUsage::default()
+        };
         for screen in std::iter::once(&self.active).chain(self.saved_primary.iter()) {
             result.row_bytes +=
                 (screen.rows.capacity() + screen.history.capacity()) * std::mem::size_of::<Row>();

@@ -125,6 +125,7 @@ fn replay(f: &Value, delivery: (&str, usize)) -> Vec<Value> {
             !outcome.unsupported
                 && !outcome.parser_limit
                 && !outcome.cluster_limit
+                && !outcome.style_limit
                 && !outcome.orphan_mark
                 && !outcome.scrolled_without_history
                 && !outcome.history_evicted,

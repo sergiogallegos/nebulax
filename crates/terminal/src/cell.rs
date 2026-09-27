@@ -82,9 +82,16 @@ impl Cell {
             _ => unreachable!("private cell kind"),
         }
     }
-    /// Reserved for the bounded style store; zero is the only current value.
+    /// Engine-local style ID; only meaningful with the owning terminal.
     pub fn style_id(&self) -> u16 {
         self.style
+    }
+    pub(crate) fn with_style(mut self, style: u16) -> Self {
+        self.style = style;
+        self
+    }
+    pub(crate) fn significant(&self) -> bool {
+        self.style != 0 || !matches!(self.view(), CellView::Empty | CellView::WrapPadding)
     }
     pub(crate) fn push(&mut self, scalar: char) {
         debug_assert_eq!(self.kind, 1);
@@ -112,17 +119,16 @@ impl Cell {
         usize::from(self.extra.is_some()) * 2
     }
     pub(crate) fn valid(&self) -> bool {
-        self.style == 0
-            && match self.view() {
-                CellView::Lead { cluster, width } => {
-                    matches!(width, 1 | 2)
-                        && cluster.scalar_count() <= 64
-                        && self
-                            .extra
-                            .as_ref()
-                            .is_none_or(|v| !v.is_empty() && v.capacity() <= 63)
-                }
-                _ => self.extra.is_none() && self.first == '\0' && self.width == 0,
+        match self.view() {
+            CellView::Lead { cluster, width } => {
+                matches!(width, 1 | 2)
+                    && cluster.scalar_count() <= 64
+                    && self
+                        .extra
+                        .as_ref()
+                        .is_none_or(|v| !v.is_empty() && v.capacity() <= 63)
             }
+            _ => self.extra.is_none() && self.first == '\0' && self.width == 0,
+        }
     }
 }

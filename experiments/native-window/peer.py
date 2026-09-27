@@ -31,10 +31,13 @@ def protocol_probe():
         actual += part
     assert actual == expected, (actual, expected)
     write("\x1b[2;1HAPP KEY Up\x1b[?1;6l\x1b[r\x1b[22;1HPROTOCOL OK")
+    write("\x1b[23;1H\x1b[1;3;4;38:2::12:34:56;48;5;230m界 RGB + indexed")
+    write("\x1b[0;48;5;17m\x1b[K\x1b[0m\x1b[24;1HSTYLE OK")
 
 
 write("NEBULAX\r\n\r\nWelcome to your terminal.\r\n")
-write("Unicode: cafe\u0301  界  👩‍💻\r\n\r\n")
+write("Unicode: cafe\u0301  界  👩‍💻\r\n")
+write("\x1b[1;36mBold cyan\x1b[0m  \x1b[3;38;5;214mItalic amber\x1b[0m  \x1b[4mUnderline\x1b[0m  \x1b[7mInverse\x1b[0m\r\n")
 write("Type a line and press Return. Arrow keys are recognized.\r\n")
 write("This demo echoes text; it does not execute commands.\r\n\r\n> ")
 decoder = codecs.getincrementaldecoder("utf-8")()

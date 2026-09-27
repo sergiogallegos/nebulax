@@ -77,7 +77,9 @@ def main():
     summary = {}
     for scenario in SCENARIOS:
         records = [v for v in raw if v["scenario"] == scenario]
-        for field in ("checksum", "resized_checksum", "snapshot_bytes"):
+        # Snapshot transfer formats can change independently of cell storage.
+        # Compare content across engines, payload sizes within each variant below.
+        for field in ("checksum", "resized_checksum"):
             assert len({v[field] for v in records}) == 1, (scenario, field)
         summary[scenario] = {}
         for variant in ("baseline", "compact"):

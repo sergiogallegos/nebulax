@@ -1,0 +1,98 @@
+[
+  {
+    "command": [
+      "cargo",
+      "build",
+      "-p",
+      "nebulax-native-bridge",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.01s\n"
+  },
+  {
+    "command": [
+      "xcrun",
+      "clang",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-I",
+      "/Users/sergiogallegos/projects/nebulax/experiments/native-bridge/include",
+      "experiments/native-bridge/tests/abi.c",
+      "-L",
+      "/Users/sergiogallegos/projects/nebulax/target/debug",
+      "-lnebulax_native_bridge",
+      "-Wl,-rpath,/Users/sergiogallegos/projects/nebulax/target/debug",
+      "-o",
+      "/Users/sergiogallegos/projects/nebulax/target/native-bridge/abi"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/Users/sergiogallegos/projects/nebulax/target/native-bridge/abi"
+    ],
+    "exit_code": 0,
+    "stdout": "C ABI: layout, invalid arguments, limits, Unicode and lifetime passed\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "xcrun",
+      "swiftc",
+      "-swift-version",
+      "6",
+      "-warnings-as-errors",
+      "-module-cache-path",
+      "/Users/sergiogallegos/projects/nebulax/target/native-bridge/module-cache",
+      "-import-objc-header",
+      "/Users/sergiogallegos/projects/nebulax/experiments/native-bridge/include/nebulax.h",
+      "experiments/native-bridge/tests/lifetime.swift",
+      "-L",
+      "/Users/sergiogallegos/projects/nebulax/target/debug",
+      "-lnebulax_native_bridge",
+      "-Xlinker",
+      "-rpath",
+      "-Xlinker",
+      "/Users/sergiogallegos/projects/nebulax/target/debug",
+      "-o",
+      "/Users/sergiogallegos/projects/nebulax/target/native-bridge/lifetime"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/Users/sergiogallegos/projects/nebulax/target/native-bridge/lifetime",
+      "/opt/homebrew/opt/python@3.14/bin/python3.14",
+      "/Users/sergiogallegos/projects/nebulax/experiments/pty-session/tests/child.py"
+    ],
+    "exit_code": 0,
+    "stdout": "Swift ABI: PTY replies, resize, retained frames and asynchronous close passed\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "cargo",
+      "test",
+      "-p",
+      "nebulax-terminal",
+      "-p",
+      "nebulax-pty-session",
+      "-p",
+      "nebulax-native-bridge",
+      "--locked",
+      "--",
+      "--test-threads=1"
+    ],
+    "exit_code": 0,
+    "stdout": "\nrunning 3 tests\ntest ffi::tests::panics_are_converted_to_status_without_crossing_c ... ok\ntest registry::tests::closing_worker_keeps_its_slot_until_cleanup_and_handles_never_wrap ... ok\ntest registry::tests::session_and_frame_caps_survive_release_recreation_and_stale_handles ... ok\n\ntest result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s\n\n\nrunning 2 tests\ntest input::tests::input_caps_are_atomic_and_recover_after_consumption ... ok\ntest os::tests::dropping_session_kills_and_reaps_its_direct_child ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 5 tests\ntest eof_and_nonzero_exit_are_independent_and_tail_output_is_drained ... ok\ntest failed_spawn_releases_handles_and_repeated_sessions_finish ... ok\ntest invalid_resize_is_atomic_and_shutdown_reaps_is_idempotent ... ok\ntest real_effect_pressure_releases_without_event_or_reply_loss ... ok\ntest real_pty_roundtrip_controlling_terminal_resize_signal_and_eof ... ok\n\ntest result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s\n\n\nrunning 8 tests\ntest blocked_partial_replies_resume_without_rereading_or_reordering ... ok\ntest bounded_echo_is_drained_during_a_partial_input_write_to_avoid_deadlock ... ok\ntest effect_pressure_stops_reads_and_preserves_every_event_in_a_flood ... ok\ntest interrupted_and_would_block_reads_do_not_flush_partial_utf8_or_csi ... ok\ntest native_input_never_splits_a_reply_and_preserves_utf8_and_key_order ... ok\ntest queued_keys_use_dispatch_time_modes_but_partial_key_writes_are_immutable ... ok\ntest would_block_after_each_partial_write_preserves_offset_and_effect_order ... ok\ntest zero_or_failed_writes_are_errors_with_the_event_still_owned ... ok\n\ntest result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 1 test\ntest clean_dumb_shell_prompt_command_echo_and_exit_use_the_existing_protocol_subset ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s\n\n\nrunning 6 tests\ntest close_is_a_request_and_cleanup_completes_on_worker ... ok\ntest effects_are_denied_without_running_native_actions_or_stalling_replies ... ok\ntest failed_launch_is_observable_and_slot_can_be_released ... ok\ntest pty_peer_negotiates_cursor_modes_origin_replies_and_region_scroll ... ok\ntest worker_finishes_child_and_publishes_text_that_outlives_worker ... ok\ntest worker_sends_native_text_and_keys_to_a_real_pty_peer ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s\n\n\nrunning 6 tests\ntest decoder::tests::malformed_prefixes_match_lossy_utf8_reference ... ok\ntest input::tests::basic_keys_and_controls_have_explicit_normal_mode_encoding ... ok\ntest screen::tests::hard_rows_below_cursor_are_cropped_without_reordering_into_history ... ok\ntest snapshot::tests::generation_never_wraps_into_a_stale_row_version ... ok\ntest tests::ascii_cells_keep_text_inline ... ok\ntest unicode::tests::official_unicode_18_extended_grapheme_tests ... ok\n\ntest result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n\n\nrunning 13 tests\ntest application_cursor_mode_lists_are_atomic_and_encoding_tracks_current_mode ... ok\ntest margins_defaults_invalid_values_and_pending_wrap_are_explicit ... ok\ntest only_full_primary_forward_scroll_enters_history ... ok\ntest origin_controls_home_addressing_motion_and_query_coordinates ... ok\ntest positioning_defaults_clamps_and_relative_motion_do_not_scroll ... ok\ntest region_cursor_modes_survive_mixed_geometry_and_byte_delivery ... ok\ntest region_index_scrolls_only_inside_margins_and_preserves_outside_rows ... ok\ntest resize_resets_both_margins_and_clamps_saved_physical_coordinates ... ok\ntest reverse_index_and_next_line_have_distinct_region_behavior ... ok\ntest saved_cursor_restores_origin_pending_wrap_and_has_per_buffer_ownership ... ok\ntest scrolling_at_top_of_viewport_severs_stale_history_wrap_links ... ok\ntest snapshots_only_damage_rows_that_changed_during_region_scroll ... ok\ntest wide_clusters_survive_region_wrap_and_scrolling_boundary_links_are_cut ... ok\n\ntest result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s\n\n\nrunning 21 tests\ntest all_small_ascii_geometries_follow_cursor_anchored_crop_and_history_policy ... ok\ntest alternate_screen_has_no_history_and_restores_primary_pending_cursor ... ok\ntest cropped_spaces_and_multiscalar_wide_owners_have_exact_cell_counts ... ok\ntest cursor_inside_a_wide_tail_remains_at_same_cluster_column ... ok\ntest disabled_history_is_explicit_and_limits_are_checked ... ok\ntest exact_edge_cursor_survives_growth_narrowing_and_next_print ... ok\ntest extreme_aspect_ratio_reflow_materializes_only_bounded_retained_rows ... ok\ntest height_only_crop_closes_primary_and_alternate_wraps ... ok\ntest height_shrink_moves_rows_to_history_and_growth_pulls_them_back ... ok\ntest hidden_primary_crop_cannot_block_alternate_resize_or_partial_mode_input ... ok\ntest invalid_and_noop_resize_are_atomic_even_with_partial_input ... ok\ntest malformed_private_modes_do_not_trigger_screen_switching ... ok\ntest mixed_feed_resize_and_screen_switches_are_byte_partition_equivalent ... ok\ntest narrow_wide_round_trips_preserve_clusters_spaces_and_hard_breaks ... ok\ntest primary_crop_and_history_eviction_are_counted_separately ... ok\ntest primary_crop_removes_dangling_wide_padding_and_keeps_partial_utf8 ... ok\ntest primary_crop_reports_loss_and_growth_does_not_restore_discarded_text ... ok\ntest primary_reflows_while_inactive_alternate_crops_wide_edges ... ok\ntest repeated_resize_of_hidden_primary_matches_visible_primary ... ok\ntest resize_reevaluates_history_cell_budget_without_losing_cursor ... ok\ntest row_and_cell_history_limits_evict_oldest_physical_rows ... ok\n\ntest result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s\n\n\nrunning 12 tests\ntest backpressure_during_a_csi_preserves_parser_state_through_finish_and_resume ... ok\ntest bounded_osc_dispatches_only_complete_payloads_and_discards_other_strings ... ok\ntest control_execution_cancellation_and_escape_restart_preserve_syntax_order ... ok\ntest delayed_replies_keep_query_time_cursor_across_resize_and_alternate_screen ... ok\ntest malformed_syntax_recovers_without_parameter_reinterpretation ... ok\ntest malformed_unsupported_and_cancelled_strings_never_produce_effects ... ok\ntest mixed_output_flood_is_lossless_under_chunking_and_repeated_queue_pressure ... ok\ntest payload_pressure_preserves_the_waiting_title_and_bounds_total_retention ... ok\ntest queue_count_pressure_pauses_exactly_once_without_losing_input_or_events ... ok\ntest replies_bell_and_titles_are_typed_ordered_and_partition_invariant ... ok\ntest syntax_limits_accept_exact_bounds_and_never_dispatch_truncated_headers ... ok\ntest syntax_preserves_parameters_subparameters_defaults_and_intermediates ... ok\n\ntest result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s\n\n\nrunning 4 tests\ntest owned_unicode_text_and_roles_survive_mutation_resize_and_destruction ... ok\ntest row_versions_survive_skipped_frames_and_cursor_only_changes ... ok\ntest snapshot_overflow_is_explicit_and_does_not_mutate_engine_or_previous_frame ... ok\ntest wrap_padding_and_row_wraps_are_explicit ... ok\n\ntest result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.74s\n\n\nrunning 7 tests\ntest clones_and_extensions_have_independent_bounded_tails_at_every_length ... ok\ntest compact_cells_reserve_style_without_allocating_for_single_scalars ... ok\ntest history_eviction_alternate_drop_and_resize_crop_release_owned_tails ... ok\ntest overwrite_and_wide_tail_erase_reclaim_all_side_capacity_immediately ... ok\ntest side_capacity_is_bounded_by_live_cells_after_mixed_edit_and_resize_churn ... ok\ntest snapshots_own_exact_text_after_row_reuse_reflow_and_terminal_destruction ... ok\ntest steady_scroll_and_reverse_index_reuse_rows_without_retaining_cluster_tails ... ok\n\ntest result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s\n\n\nrunning 10 tests\ntest ambiguous_width_is_explicit_and_terminal_segmentation_handles_indic_and_hangul ... ok\ntest bounded_clusters_continue_segmentation_and_recover_at_next_boundary ... ok\ntest controls_close_cluster_and_unsupported_sequences_are_visible ... ok\ntest deterministic_mixed_streams_preserve_state_invariants_for_each_byte ... ok\ntest erasing_or_overwriting_half_a_wide_cell_clears_the_owner ... ok\ntest geometry_caps_reject_overflow_and_bottom_scroll_reports_missing_history ... ok\ntest malformed_utf8_and_incomplete_input_do_not_depend_on_feeds ... ok\ntest parser_limits_discard_payload_and_recover_on_final_or_cancel ... ok\ntest string_payloads_never_become_screen_or_native_effects ... ok\ntest width_changes_at_edge_repair_cursor_cells_and_wrap ... ok\n\ntest result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s\n\n\nrunning 12 tests\ntest color_only_edits_damage_rows_but_rendition_changes_alone_do_not ... ok\ntest colors_and_attribute_resets_have_independent_handwritten_expectations ... ok\ntest erasure_repairs_wide_owners_and_keeps_only_current_background ... ok\ntest exhaustion_is_atomic_and_recovers_after_cells_release_styles ... ok\ntest history_and_hidden_cells_keep_their_styles_during_collection ... ok\ntest indexed_rgb_colon_and_semicolon_forms_are_chunk_independent ... ok\ntest malformed_or_unsupported_sgr_never_partially_changes_rendition ... ok\ntest saved_rendition_hidden_primary_and_clones_are_gc_roots ... ok\ntest sgr_keeps_graphemes_and_pending_wrap_with_the_original_lead_style ... ok\ntest style_churn_reuses_bounded_slots_and_never_mutates_held_frames ... ok\ntest style_only_blank_rows_survive_reflow_and_width_changes_keep_styles ... ok\ntest two_slot_rendition_allocation_rolls_back_when_only_one_slot_is_free ... ok\n\ntest result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n\nrunning 0 tests\n\ntest result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s\n\n",
+    "stderr": "    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.02s\n     Running unittests src/lib.rs (target/debug/deps/nebulax_native_bridge-b1a2489884ae05d5)\n     Running unittests src/lib.rs (target/debug/deps/nebulax_pty_session-b985675bfd1d6685)\n     Running tests/lifecycle.rs (target/debug/deps/lifecycle-4eeefab29daa0c99)\n     Running tests/pump.rs (target/debug/deps/pump-31d7041a99a12bef)\n     Running tests/shell.rs (target/debug/deps/shell-9edce0187cd85f79)\n     Running tests/worker.rs (target/debug/deps/worker-7722daf1c3091843)\n     Running unittests src/lib.rs (target/debug/deps/nebulax_terminal-a2fb1667817b1845)\n     Running tests/cursor_and_regions.rs (target/debug/deps/cursor_and_regions-b0df00b3c08b7de2)\n     Running tests/history_and_resize.rs (target/debug/deps/history_and_resize-2b1c7800ec4e4446)\n     Running tests/parser_and_output.rs (target/debug/deps/parser_and_output-792ee06a14fa90dc)\n     Running tests/snapshot.rs (target/debug/deps/snapshot-a5e563a69e6bdae9)\n     Running tests/storage.rs (target/debug/deps/storage-38379f38f23896a5)\n     Running tests/stream_and_edit.rs (target/debug/deps/stream_and_edit-2e2b124dd858a13c)\n     Running tests/styles.rs (target/debug/deps/styles-933bd16412f9995c)\n   Doc-tests nebulax_native_bridge\n   Doc-tests nebulax_pty_session\n   Doc-tests nebulax_terminal\n"
+  }
+]

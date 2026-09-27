@@ -15,11 +15,15 @@ enum Action {
     Erase(usize),
     EraseLine,
     Query(u16),
+    Rendition(Header),
     Unsupported,
 }
 fn csi(header: Header, final_byte: u8) -> Action {
     use Action::*;
     let params = header.parameters();
+    if header.prefix().is_none() && header.intermediates().is_empty() && final_byte == b'm' {
+        return Rendition(header);
+    }
     if !header.intermediates().is_empty() || params.iter().any(|p| p.subparameter) {
         return Unsupported;
     }
@@ -102,6 +106,7 @@ impl Terminal {
                 self.flush_decoder(out);
                 self.apply_action(Action::Control(byte), out);
             }
+            Event::EscapeBoundary => self.flush_decoder(out),
             Event::Boundary => {
                 self.flush_decoder(out);
                 self.end_cluster();
@@ -113,9 +118,18 @@ impl Terminal {
             }
             Event::Csi { header, final_byte } => self.apply_action(csi(header, final_byte), out),
             Event::Esc { header, final_byte } => self.apply_action(esc(header, final_byte), out),
-            Event::Osc(bytes) => self.osc(bytes, out),
-            Event::Limit => out.parser_limit = true,
-            Event::Invalid | Event::IgnoredString(_) => out.unsupported = true,
+            Event::Osc(bytes) => {
+                self.end_cluster();
+                self.osc(bytes, out);
+            }
+            Event::Limit => {
+                self.end_cluster();
+                out.parser_limit = true;
+            }
+            Event::Invalid | Event::IgnoredString(_) => {
+                self.end_cluster();
+                out.unsupported = true;
+            }
         }
     }
     fn osc(&mut self, bytes: Vec<u8>, out: &mut FeedOutcome) {
@@ -146,6 +160,9 @@ impl Terminal {
         });
     }
     fn apply_action(&mut self, action: Action, out: &mut FeedOutcome) {
+        if !matches!(action, Action::Rendition(_)) {
+            self.end_cluster();
+        }
         match action {
             Action::Modes(header, enabled) => {
                 self.end_cluster();
@@ -208,7 +225,18 @@ impl Terminal {
                 self.end_cluster();
                 self.active.reverse_index(out);
             }
-            Action::Unsupported => out.unsupported = true,
+            Action::Rendition(header) => {
+                if let Some(style) = self.current_style().sgr(header) {
+                    out.style_limit |= !self.set_rendition(style);
+                } else {
+                    self.end_cluster();
+                    out.unsupported = true;
+                }
+            }
+            Action::Unsupported => {
+                self.end_cluster();
+                out.unsupported = true;
+            }
             Action::Query(5) => self.output.emit(OutputEvent::Reply(b"\x1b[0n".to_vec())),
             Action::Query(6) => {
                 let c = self.cursor();

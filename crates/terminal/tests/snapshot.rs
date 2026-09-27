@@ -16,7 +16,7 @@ fn owned_unicode_text_and_roles_survive_mutation_resize_and_destruction() {
     let mut t = terminal(8, 3);
     t.feed("a\u{301}👩‍💻 🇺🇸".as_bytes());
     let frame = Snapshot::capture(&t, None).unwrap();
-    assert_eq!(std::mem::size_of::<SnapshotCell>(), 8);
+    assert_eq!(std::mem::size_of::<SnapshotCell>(), 12);
     assert_eq!(frame.cell_text(&frame.cells()[0]), Some("a\u{301}"));
     assert_eq!(frame.cell_text(&frame.cells()[1]), Some("👩‍💻"));
     assert_eq!((frame.cells()[1].width, frame.cells()[2].kind), (2, 2));

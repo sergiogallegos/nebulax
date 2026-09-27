@@ -20,7 +20,7 @@ func view(_ handle: UInt64) -> NbFrame {
 func text(_ frame: NbFrame) -> [UInt8] {
     Array(UnsafeBufferPointer(start: frame.text, count: frame.text_len))
 }
-precondition(MemoryLayout<NbCell>.size == 8 && MemoryLayout<NbFrame>.size == 88)
+precondition(nb_abi_version() == 2 && MemoryLayout<NbCell>.size == 12 && MemoryLayout<NbFrame>.size == 104 && MemoryLayout<NbStyle>.size == 12)
 let session = start(CommandLine.arguments[1], [CommandLine.arguments[2], "roundtrip"])
 let deadline = Date().addingTimeInterval(5)
 var held: UInt64 = 0
@@ -53,6 +53,7 @@ precondition(String(decoding: text(finalView), as: UTF8.self) == "abRDONEERR�"
 let heldView = view(held)
 precondition(nb_session_release(session) == NB_OK)
 precondition(text(heldView) == heldBytes)
+precondition(heldView.style_count > 0 && heldView.styles![0].attributes == 0)
 precondition(String(decoding: text(finalView), as: UTF8.self) == "abRDONEERR�")
 precondition(nb_frame_release(held) == NB_OK && nb_frame_release(final) == NB_OK)
 precondition(nb_frame_release(final) == NB_INVALID)

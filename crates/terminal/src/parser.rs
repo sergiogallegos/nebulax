@@ -69,8 +69,10 @@ pub enum StringKind {
 pub enum Event {
     Print(u8),
     Execute(u8),
-    /// ESC or a ground-state DEL closes the terminal's text extension target.
+    /// A ground-state DEL closes the text extension target.
     Boundary,
+    /// ESC defers the decision until dispatch, since SGR preserves graphemes.
+    EscapeBoundary,
     Esc {
         header: Header,
         final_byte: u8,
@@ -175,7 +177,7 @@ impl Parser {
         }
         if b == 0x1b {
             self.state = State::Escape(Header::default());
-            return Some(Boundary);
+            return Some(EscapeBoundary);
         }
         if b < 0x20 {
             return Some(Execute(b));

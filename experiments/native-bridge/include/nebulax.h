@@ -5,7 +5,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-/* Private ABI v1, macOS only. All functions return status, except version.
+/* Private ABI v2, macOS only. All functions return status, except version.
  * Caller storage: readable inputs, writable aligned outputs, no aliasing or
  * concurrent mutation during a call. Outputs are unchanged on nonzero status.
  * UTF-8 command strings: no NUL, <=4096 bytes each, <=16 args, <=16384 total.
@@ -22,7 +22,11 @@ typedef struct {
     uint32_t failure, finished;
     uint64_t denied_effects;
 } NbStatus;
-typedef struct { uint32_t text_offset; uint16_t text_len; uint8_t width, kind; } NbCell;
+typedef struct { uint32_t text_offset; uint16_t text_len; uint8_t width, kind; uint16_t style_id, reserved; } NbCell;
+/* Color: 0 default; 0x01000000|index (0..255); 0x02000000|RRGGBB.
+ * Attributes: bold=1, faint=2, italic=4, underline=8, inverse=16, hidden=32,
+ * strike=64, double underline=128. Styles are immutable frame-owned values. */
+typedef struct { uint32_t foreground, background, attributes; } NbStyle;
 typedef struct {
     uint64_t generation;
     uint32_t columns, lines, cursor_row, cursor_column, wrap_pending, alternate;
@@ -33,6 +37,8 @@ typedef struct {
     const uint64_t *row_versions;
     const uint8_t *row_wraps;
     size_t row_count;
+    const NbStyle *styles;
+    size_t style_count;
 } NbFrame;
 uint32_t nb_abi_version(void);
 int32_t nb_session_start(NbBytes executable, const NbBytes *args, size_t argc, uint32_t columns, uint32_t lines, uint64_t *out);
@@ -56,8 +62,9 @@ int32_t nb_session_release(uint64_t session);
  * last DISPLAYED frame, not against generation-1. Geometry changes redraw all.
  * Frames remain readable after session release. Read-only pointers are valid
  * until frame_release, which MUST NOT race their use. No engine lock is held.
+ * Every cell.style_id is < style_count (<=1024); cell.reserved is zero.
  * kind: 0 empty, 1 lead, 2 wide continuation, 3 wrap padding. Text is UTF-8.
- * <=2 MiB cell/text/row payload per frame; no truncation on overflow.
+ * <=2 MiB cell/text/row/style payload per frame; no truncation on overflow.
  */
 int32_t nb_frame_acquire(uint64_t session, uint64_t after_generation, uint64_t *out);
 int32_t nb_frame_view(uint64_t frame, NbFrame *out);

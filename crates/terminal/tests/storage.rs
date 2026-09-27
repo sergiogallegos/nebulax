@@ -132,7 +132,7 @@ fn snapshots_own_exact_text_after_row_reuse_reflow_and_terminal_destruction() {
     std::thread::spawn(move || {
         assert_eq!(a.text(), expected);
         assert_ne!(a.text(), b.text());
-        assert_eq!(a.payload_bytes(), 8 * 3 * 8 + 3 * 9 + expected.len());
+        assert_eq!(a.payload_bytes(), 8 * 3 * 12 + 3 * 9 + expected.len() + 12);
     })
     .join()
     .unwrap();

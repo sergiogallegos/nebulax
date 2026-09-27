@@ -1,6 +1,6 @@
 //! All foreign-pointer handling and exported symbols stay in this module.
 use crate::registry::{self, INVALID, LIMIT, PANIC};
-use nebulax_terminal::{Size, snapshot::SnapshotCell};
+use nebulax_terminal::{Size, snapshot::SnapshotCell, style::Style};
 use std::panic::{AssertUnwindSafe, catch_unwind};
 use std::process::Command;
 
@@ -34,6 +34,8 @@ pub struct NbFrame {
     pub row_versions: *const u64,
     pub row_wraps: *const u8,
     pub row_count: usize,
+    pub styles: *const Style,
+    pub style_count: usize,
 }
 fn boundary(f: impl FnOnce() -> Result<(), i32>) -> i32 {
     match catch_unwind(AssertUnwindSafe(f)) {
@@ -69,7 +71,7 @@ unsafe fn string(bytes: NbBytes) -> Result<String, i32> {
 // SAFETY: project-private prefixed symbol; declaration matches the checked C header.
 #[unsafe(no_mangle)]
 pub extern "C" fn nb_abi_version() -> u32 {
-    1
+    2
 }
 
 /// # Safety
@@ -240,6 +242,8 @@ pub unsafe extern "C" fn nb_frame_view(handle: u64, out: *mut NbFrame) -> i32 {
                 row_versions: frame.row_versions().as_ptr(),
                 row_wraps: frame.row_wraps().as_ptr(),
                 row_count: frame.row_versions().len(),
+                styles: frame.styles().as_ptr(),
+                style_count: frame.styles().len(),
             })
         };
         Ok(())

@@ -26,3 +26,5 @@ Current decisions live in [ADRs](../docs/adr/0001-approved-direction.md); resear
 - [Cursor/region/application-key integration](2026-09-26-cursor-regions.md): screen state ownership, thirteen core tests, live PTY negotiation and native protocol regression.
 
 - [Integrated compact storage](2026-09-26-compact-storage.md): real 16-byte cells, direct tail reclamation, row reuse, 100-sample before/after measurements and native regression.
+
+- [Bounded styles and native rendition](2026-09-27-bounded-styles.md): reclaimable style IDs, SGR subset, copied snapshot palettes, ABI v2 and styled AppKit evidence.

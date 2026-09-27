@@ -8,7 +8,7 @@ The project-level design review is accepted. We are now in **Phase 0A: validatin
 | Main boundary | Owned Rust core, Swift/AppKit native UI, private C boundary — accepted |
 | Dependencies | Minimal justified dependencies; reference engines inform our design — accepted |
 | Configuration/control | TOML/schema, shared policy, daemon-free v1, scoped CLI/MCP — accepted direction |
-| Terminal state | Implemented Rust graphemes, bounded history, alternate screen, resize/reflow and cursor/region state; broader protocol/compatibility work remains |
+| Terminal state | Implemented Rust graphemes, bounded history, alternate screen, resize/reflow, cursor/region state and bounded SGR styles; broader protocol/compatibility work remains |
 | Parser/output | Bounded generic syntax, separate semantics and ordered typed replies/effects implemented with tested PTY transport; broader VT behavior remains open |
 | Storage/snapshots | 16-byte directly owned cells, tail reclamation and bounded snapshots implemented; shared/chunked storage and performance tuning remain open |
 | Rendering/fonts | Metal/Core Text first to evaluate, wgpu comparison pending; implementation and performance choice open |
@@ -35,3 +35,5 @@ The [foundation review](FOUNDATION_REVIEW.md) records the assessment of the owne
 [ADR 0010](../adr/0010-cursor-regions-and-input-modes.md) records screen-owned cursor/region behavior and terminal-wide application cursor-key encoding, verified through the native path.
 
 [ADR 0011](../adr/0011-compact-owned-cell-storage.md) records measured compact-cell integration, bounded direct ownership and the dense-cluster resize tradeoff.
+
+[ADR 0012](../adr/0012-bounded-styles-and-native-rendition.md) records the bounded style table, SGR subset, palette-owning snapshots, private ABI v2 and native color/attribute drawing. Broader protocol and typography acceptance remain open.

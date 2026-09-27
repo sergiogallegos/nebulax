@@ -87,9 +87,9 @@ fn controls_close_cluster_and_unsupported_sequences_are_visible() {
     let (t, out) = assert_partitions(terminal(8, 2), "e\r\u{301}!".as_bytes());
     assert_eq!(text(&t, 0), "!");
     assert!(out.orphan_mark);
-    let (t, out) = assert_partitions(terminal(8, 2), "e\u{1b}[31m\u{301}!".as_bytes());
+    let (t, out) = assert_partitions(terminal(8, 2), "e\u{1b}[999m\u{301}!".as_bytes());
     assert!(out.unsupported && out.orphan_mark);
-    assert_eq!(text(&t, 0), "e!"); // SGR is explicitly unsupported in this slice.
+    assert_eq!(text(&t, 0), "e!"); // Unknown SGR is rejected; supported SGR has separate positive coverage.
     let (t, out) = assert_partitions(terminal(8, 2), b"a\x1b[?1048hZ");
     assert!(out.unsupported);
     assert_eq!(text(&t, 0), "aZ");

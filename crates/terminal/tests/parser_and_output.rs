@@ -231,7 +231,7 @@ fn bounded_osc_dispatches_only_complete_payloads_and_discards_other_strings() {
         assert_eq!(
             events(&bytes),
             [
-                Event::Boundary,
+                Event::EscapeBoundary,
                 Event::IgnoredString(kind),
                 Event::Print(b'Z')
             ]

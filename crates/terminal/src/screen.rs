@@ -6,6 +6,8 @@ use std::collections::VecDeque;
 struct SavedCursor {
     cursor: Cursor,
     origin: bool,
+    style: u16,
+    erase_style: u16,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -14,6 +16,8 @@ pub(crate) struct Screen {
     pub history: VecDeque<Row>,
     pub cursor: Cursor,
     pub origin: bool,
+    pub style: u16,
+    pub erase_style: u16,
     pub top: usize,
     pub bottom: usize,
     saved_cursor: SavedCursor,
@@ -26,12 +30,22 @@ impl Screen {
             history: VecDeque::new(),
             cursor: Cursor::default(),
             origin: false,
+            style: 0,
+            erase_style: 0,
             top: 0,
             bottom: size.lines - 1,
             saved_cursor: SavedCursor::default(),
         }
     }
 
+    pub fn style_roots(&self) -> [u16; 4] {
+        [
+            self.style,
+            self.erase_style,
+            self.saved_cursor.style,
+            self.saved_cursor.erase_style,
+        ]
+    }
     pub fn position(&mut self, row: usize, column: usize) {
         let top = if self.origin { self.top } else { 0 };
         let bottom = if self.origin {
@@ -93,11 +107,15 @@ impl Screen {
         self.saved_cursor = SavedCursor {
             cursor: self.cursor,
             origin: self.origin,
+            style: self.style,
+            erase_style: self.erase_style,
         };
     }
 
     pub fn restore_cursor(&mut self) {
         self.origin = self.saved_cursor.origin;
+        self.style = self.saved_cursor.style;
+        self.erase_style = self.saved_cursor.erase_style;
         self.cursor = self.saved_cursor.cursor;
         if self.origin {
             self.cursor.row = self.cursor.row.clamp(self.top, self.bottom);
@@ -108,6 +126,8 @@ impl Screen {
     // saved physical position. Only the active cursor participates in reflow.
     fn resized_state(&self, result: &mut Self, size: Size) {
         result.origin = self.origin;
+        result.style = self.style;
+        result.erase_style = self.erase_style;
         result.saved_cursor = self.saved_cursor;
         let saved = &mut result.saved_cursor.cursor;
         saved.row = saved.row.min(size.lines - 1);
@@ -127,12 +147,16 @@ impl Screen {
         } else {
             end
         };
-        cells[start..end].fill(Cell::EMPTY);
+        cells[start..end].fill(Cell::EMPTY.with_style(self.erase_style));
     }
 
     fn break_wrap(&mut self, row: usize) {
         self.rows[row].soft_wrapped = false;
-        if self.rows[row].cells.last() == Some(&Cell::WRAP_PADDING) {
+        if self.rows[row]
+            .cells
+            .last()
+            .is_some_and(|c| matches!(c.view(), CellView::WrapPadding))
+        {
             *self.rows[row].cells.last_mut().unwrap() = Cell::EMPTY;
         }
     }
@@ -142,7 +166,11 @@ impl Screen {
             self.break_wrap(self.top - 1);
         } else if let Some(row) = self.history.back_mut() {
             row.soft_wrapped = false;
-            if row.cells.last() == Some(&Cell::WRAP_PADDING) {
+            if row
+                .cells
+                .last()
+                .is_some_and(|c| matches!(c.view(), CellView::WrapPadding))
+            {
                 *row.cells.last_mut().unwrap() = Cell::EMPTY;
             }
         }
@@ -157,16 +185,18 @@ impl Screen {
             if self.top == 0 && self.bottom + 1 == self.rows.len() && history_capacity > 0 {
                 let blank = if self.history.len() == history_capacity {
                     let mut row = self.history.pop_front().unwrap();
-                    row.clear();
+                    row.clear(self.erase_style);
                     out.history_evicted = true;
                     row
                 } else {
-                    Row::blank(self.rows[0].cells.len())
+                    let mut row = Row::blank(self.rows[0].cells.len());
+                    row.clear(self.erase_style);
+                    row
                 };
                 let old = std::mem::replace(&mut self.rows[self.bottom], blank);
                 self.history.push_back(old);
             } else {
-                self.rows[self.bottom].clear();
+                self.rows[self.bottom].clear(self.erase_style);
                 out.scrolled_without_history = true;
             }
         } else if self.cursor.row + 1 < self.rows.len() {
@@ -182,7 +212,7 @@ impl Screen {
         if self.cursor.row == self.top {
             self.detach_region_start();
             self.rows[self.top..=self.bottom].rotate_right(1);
-            self.rows[self.top].clear();
+            self.rows[self.top].clear(self.erase_style);
             self.break_wrap(self.bottom);
             out.scrolled_without_history = true;
         } else {
@@ -223,7 +253,12 @@ impl Screen {
                         {
                             return false;
                         }
-                        if width == 2 && row.cells.get(i + 1) != Some(&Cell::CONTINUATION) {
+                        if width == 2
+                            && !row.cells.get(i + 1).is_some_and(|c| {
+                                matches!(c.view(), CellView::Continuation)
+                                    && c.style_id() == cell.style_id()
+                            })
+                        {
                             return false;
                         }
                     }
@@ -257,14 +292,14 @@ impl Screen {
                 outcome.cropped_cells += old
                     .cells
                     .iter()
-                    .filter(|c| !matches!(c.view(), CellView::Empty | CellView::WrapPadding))
+                    .filter(|c| c.significant() && !matches!(c.view(), CellView::WrapPadding))
                     .count();
                 continue;
             }
             for (x, c) in old.cells.iter().enumerate() {
                 if x >= size.columns {
                     outcome.cropped_cells +=
-                        usize::from(!matches!(c.view(), CellView::Empty | CellView::WrapPadding));
+                        usize::from(c.significant() && !matches!(c.view(), CellView::WrapPadding));
                     continue;
                 }
                 result.rows[y].cells[x] = match c.view() {
@@ -302,13 +337,7 @@ impl Screen {
             .iter()
             .chain(&self.rows)
             .enumerate()
-            .filter(|(_, row)| {
-                row.soft_wrapped
-                    || row
-                        .cells
-                        .iter()
-                        .any(|c| !matches!(c.view(), CellView::Empty | CellView::WrapPadding))
-            })
+            .filter(|(_, row)| row.soft_wrapped || row.cells.iter().any(Cell::significant))
             .map(|(i, _)| i + 1)
             .max()
             .unwrap_or(0)
@@ -336,7 +365,7 @@ impl Screen {
             } else {
                 row.cells
                     .iter()
-                    .rposition(|c| !matches!(c.view(), CellView::Empty | CellView::WrapPadding))
+                    .rposition(Cell::significant)
                     .map_or(0, |i| i + 1)
                     .max(if y == cursor_row { cursor_end } else { 0 })
             };
@@ -344,7 +373,7 @@ impl Screen {
                 match c.view() {
                     CellView::Empty => {
                         logical_width += 1;
-                        logical.push(Cell::EMPTY);
+                        logical.push(c.clone());
                     }
                     CellView::Lead { width, .. } => {
                         logical_width += usize::from(width);
@@ -398,7 +427,7 @@ impl ReflowSink {
             self.outcome.cropped_cells += row
                 .cells
                 .iter()
-                .filter(|c| !matches!(c.view(), CellView::Empty | CellView::WrapPadding))
+                .filter(|c| c.significant() && !matches!(c.view(), CellView::WrapPadding))
                 .count();
         } else {
             if self.rows.len() == self.capacity {
@@ -435,7 +464,8 @@ impl ReflowSink {
             }
             if x + width > self.size.columns {
                 if x < self.size.columns {
-                    row.cells.push(Cell::WRAP_PADDING);
+                    row.cells
+                        .push(Cell::WRAP_PADDING.with_style(cell.style_id()));
                 }
                 row.soft_wrapped = true;
                 self.push(row);
@@ -456,9 +486,10 @@ impl ReflowSink {
                 });
                 mapped = true;
             }
+            let style = cell.style_id();
             row.cells.push(cell);
             if width == 2 {
-                row.cells.push(Cell::CONTINUATION);
+                row.cells.push(Cell::CONTINUATION.with_style(style));
             }
             x += width;
             consumed += width;
@@ -482,7 +513,11 @@ impl ReflowSink {
         if self.outcome.cropped_rows != 0 {
             let last = self.rows.back_mut().unwrap();
             last.soft_wrapped = false;
-            if last.cells.last() == Some(&Cell::WRAP_PADDING) {
+            if last
+                .cells
+                .last()
+                .is_some_and(|c| matches!(c.view(), CellView::WrapPadding))
+            {
                 *last.cells.last_mut().unwrap() = Cell::EMPTY;
             }
         }
@@ -520,6 +555,8 @@ impl ReflowSink {
                 history,
                 cursor,
                 origin: false,
+                style: 0,
+                erase_style: 0,
                 top: 0,
                 bottom: self.size.lines - 1,
                 saved_cursor: SavedCursor::default(),

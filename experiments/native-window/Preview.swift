@@ -26,6 +26,37 @@ final class GridView: NSView {
     let cellHeight: CGFloat = 22
     let inset: CGFloat = 24
     let font = NSFont.monospacedSystemFont(ofSize: 15, weight: .regular)
+    let defaultForeground = NSColor(srgbRed: 0.85, green: 0.89, blue: 0.94, alpha: 1)
+    let defaultBackground = NSColor(srgbRed: 0.045, green: 0.063, blue: 0.087, alpha: 1)
+    lazy var fonts: [NSFont] = [font,
+        NSFontManager.shared.convert(font, toHaveTrait: .boldFontMask),
+        NSFontManager.shared.convert(font, toHaveTrait: .italicFontMask),
+        NSFontManager.shared.convert(font, toHaveTrait: [.boldFontMask, .italicFontMask])]
+    func color(_ encoded: UInt32, fallback: NSColor) -> NSColor {
+        if encoded == 0 { return fallback }
+        let rgb: UInt32
+        if encoded >> 24 == 2 { rgb = encoded & 0xffffff }
+        else {
+            let index = Int(encoded & 255)
+            let basic: [UInt32] = [0x18212b, 0xe06c75, 0x98c379, 0xe5c07b, 0x61afef, 0xc678dd, 0x56b6c2, 0xabb2bf,
+                                   0x5c6370, 0xff8992, 0xb5e890, 0xffd68f, 0x85caff, 0xe5a0ff, 0x7edce8, 0xf2f5f9]
+            if index < 16 { rgb = basic[index] }
+            else if index < 232 {
+                let n = index - 16
+                let levels: [UInt32] = [0, 95, 135, 175, 215, 255]
+                rgb = levels[n / 36] << 16 | levels[(n / 6) % 6] << 8 | levels[n % 6]
+            } else { let v = UInt32(8 + 10 * (index - 232)); rgb = v << 16 | v << 8 | v }
+        }
+        return NSColor(srgbRed: CGFloat((rgb >> 16) & 255) / 255, green: CGFloat((rgb >> 8) & 255) / 255,
+                       blue: CGFloat(rgb & 255) / 255, alpha: 1)
+    }
+    func colors(_ style: NbStyle) -> (NSColor, NSColor) {
+        var fg = color(style.foreground, fallback: defaultForeground)
+        var bg = color(style.background, fallback: defaultBackground)
+        if style.attributes & 16 != 0 { swap(&fg, &bg) }
+        if style.attributes & 2 != 0 { fg = fg.blended(withFraction: 0.5, of: bg)! }
+        return (fg, bg)
+    }
     var paintCount = 0
     override var acceptsFirstResponder: Bool { true }
     override var isOpaque: Bool { true }
@@ -45,28 +76,46 @@ final class GridView: NSView {
     }
     func clearFrame() { frameLease?.release(); frameLease = nil }
     override func draw(_ dirtyRect: NSRect) {
-        NSColor(calibratedRed: 0.045, green: 0.063, blue: 0.087, alpha: 1).setFill()
+        defaultBackground.setFill()
         bounds.fill()
         guard let lease = frameLease, let context = NSGraphicsContext.current?.cgContext else { return }
         let snapshot = lease.view
         context.saveGState()
         context.textMatrix = .identity
-        let foreground = NSColor(calibratedRed: 0.85, green: 0.89, blue: 0.94, alpha: 1)
-        let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: foreground]
+        // Paint every background first: a wide continuation must not cover its glyph.
+        for row in 0..<Int(snapshot.lines) {
+            let bottom = bounds.height - inset - CGFloat(row + 1) * cellHeight
+            for column in 0..<Int(snapshot.columns) {
+                let cell = snapshot.cells![row * Int(snapshot.columns) + column]
+                let style = snapshot.styles![Int(cell.style_id)]
+                context.setFillColor(colors(style).1.cgColor)
+                context.fill(CGRect(x: inset + CGFloat(column) * cellWidth, y: bottom, width: cellWidth, height: cellHeight))
+            }
+        }
         for row in 0..<Int(snapshot.lines) {
             let bottom = bounds.height - inset - CGFloat(row + 1) * cellHeight
             if bottom + cellHeight < 0 { break }
             for column in 0..<Int(snapshot.columns) {
                 let cell = snapshot.cells![row * Int(snapshot.columns) + column]
                 if cell.kind != 1 || cell.text_len == 0 { continue }
+                let style = snapshot.styles![Int(cell.style_id)]
+                if style.attributes & 32 != 0 { continue }
                 let left = inset + CGFloat(column) * cellWidth
                 if left >= bounds.width { break }
+                let foreground = colors(style).0
+                let fontIndex = (style.attributes & 1 != 0 ? 1 : 0) + (style.attributes & 4 != 0 ? 2 : 0)
+                let attrs: [NSAttributedString.Key: Any] = [.font: fonts[fontIndex], .foregroundColor: foreground]
                 let text = String(decoding: UnsafeBufferPointer(start: snapshot.text!.advanced(by: Int(cell.text_offset)), count: Int(cell.text_len)), as: UTF8.self)
                 let line = CTLineCreateWithAttributedString(NSAttributedString(string: text, attributes: attrs))
                 context.saveGState()
-                context.clip(to: CGRect(x: left, y: bottom, width: cellWidth * CGFloat(cell.width), height: cellHeight))
+                let width = cellWidth * CGFloat(cell.width)
+                context.clip(to: CGRect(x: left, y: bottom, width: width, height: cellHeight))
                 context.textPosition = CGPoint(x: left, y: bottom + 5)
                 CTLineDraw(line, context)
+                context.setFillColor(foreground.cgColor)
+                if style.attributes & (8 | 128) != 0 { context.fill(CGRect(x: left, y: bottom + 3, width: width, height: 1)) }
+                if style.attributes & 128 != 0 { context.fill(CGRect(x: left, y: bottom + 1, width: width, height: 1)) }
+                if style.attributes & 64 != 0 { context.fill(CGRect(x: left, y: bottom + 10, width: width, height: 1)) }
                 context.restoreGState()
             }
         }
@@ -113,6 +162,7 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var shell: Bool { arguments.contains("--shell") }
     func option(_ name: String) -> String? { guard let i = arguments.firstIndex(of: name), arguments.indices.contains(i+1) else { return nil }; return arguments[i+1] }
     func applicationDidFinishLaunching(_ notification: Notification) {
+        precondition(nb_abi_version() == 2)
         NSApp.setActivationPolicy(.regular)
         let menu = NSMenu()
         let item = NSMenuItem()
@@ -250,7 +300,7 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
         } else if testStage == 2 && text.contains("APP READY") && text.contains("REGION OK") {
             event("\u{f700}", code: 126)
             testStage = 3
-        } else if testStage == 3 && text.contains("PROTOCOL OK") {
+        } else if testStage == 3 && text.contains("STYLE OK") {
             precondition(text.contains("APP KEY Up") && text.contains("FIXED TOP") && text.contains("FIXED BOTTOM"))
             window.setContentSize(NSSize(width: 948, height: 630))
             testStage = 4
@@ -258,6 +308,14 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
             precondition(text.contains("Key: Up") && text.contains("You typed: Rust 界"))
             precondition(text.contains("PROTOCOL OK") && text.contains("APP KEY Up") && text.contains("REGION OK"))
             precondition(text.contains("FIXED TOP") && text.contains("FIXED BOTTOM"))
+            precondition(text.contains("STYLE OK"))
+            let styled = frame.view.cells![22 * 90]
+            let rendition = frame.view.styles![Int(styled.style_id)]
+            precondition(rendition.foreground == 0x020c2238 && rendition.background == 0x010000e6 && rendition.attributes == 13)
+            precondition(frame.view.cells![22 * 90 + 1].style_id == styled.style_id)
+            let erased = frame.view.cells![22 * 90 + 60]
+            let eraseStyle = frame.view.styles![Int(erased.style_id)]
+            precondition(erased.kind == 0 && eraseStyle.background == 0x01000011 && eraseStyle.foreground == 0 && eraseStyle.attributes == 0)
             grid.displayIfNeeded()
             precondition(grid.paintCount > 0)
             renderedText = text
@@ -275,6 +333,7 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
                                   "typed_text_seen": renderedText.contains("You typed: Rust 界"), "arrow_seen": renderedText.contains("Key: Up"),
                                   "application_cursor_reply_and_region_seen": renderedText.contains("PROTOCOL OK") && renderedText.contains("APP KEY Up") && renderedText.contains("REGION OK"),
                                   "outside_region_rows_preserved": renderedText.contains("FIXED TOP") && renderedText.contains("FIXED BOTTOM"),
+                                  "styled_wide_cell_and_erased_background_verified": true, "abi_version": nb_abi_version(),
                                   "child_reaped_before_window_close": true]
         try! JSONSerialization.data(withJSONObject: result, options: [.prettyPrinted, .sortedKeys]).write(to: URL(fileURLWithPath: option("--output")!).appendingPathComponent("window.json"))
         completedTest = true

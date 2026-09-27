@@ -10,6 +10,7 @@ mod screen;
 mod semantic;
 pub mod snapshot;
 pub mod storage;
+pub mod style;
 mod tables;
 pub mod unicode;
 
@@ -98,8 +99,8 @@ impl Row {
             soft_wrapped: false,
         }
     }
-    fn clear(&mut self) {
-        self.cells.fill(Cell::EMPTY);
+    fn clear(&mut self, style: u16) {
+        self.cells.fill(Cell::EMPTY.with_style(style));
         self.soft_wrapped = false;
     }
     pub fn cells(&self) -> &[Cell] {
@@ -133,6 +134,7 @@ pub struct FeedOutcome {
     pub unsupported: bool,
     pub parser_limit: bool,
     pub cluster_limit: bool,
+    pub style_limit: bool,
     pub orphan_mark: bool,
     pub scrolled_without_history: bool,
     pub history_evicted: bool,
@@ -146,6 +148,7 @@ impl FeedOutcome {
         self.unsupported |= other.unsupported;
         self.parser_limit |= other.parser_limit;
         self.cluster_limit |= other.cluster_limit;
+        self.style_limit |= other.style_limit;
         self.orphan_mark |= other.orphan_mark;
         self.scrolled_without_history |= other.scrolled_without_history;
         self.history_evicted |= other.history_evicted;
@@ -163,6 +166,7 @@ pub struct Terminal {
     parser: Parser,
     output: Output,
     application_cursor: bool,
+    styles: style::Styles,
     segmenter: GraphemeBreak,
     last_lead: Option<(usize, usize)>,
 }
@@ -195,6 +199,7 @@ impl Terminal {
             parser: Parser::default(),
             output: Output::default(),
             application_cursor: false,
+            styles: style::Styles::default(),
             segmenter: GraphemeBreak::default(),
             last_lead: None,
         })
@@ -387,7 +392,8 @@ impl Terminal {
                 let mut cell = std::mem::take(cell);
                 cell.set_width(new_width);
                 if old_width == 2 {
-                    self.active.rows[row].cells[col + 1] = Cell::EMPTY;
+                    self.active.rows[row].cells[col + 1] =
+                        Cell::EMPTY.with_style(self.active.erase_style);
                 }
                 self.active.cursor = Cursor {
                     row,
@@ -405,7 +411,11 @@ impl Terminal {
             out.orphan_mark = true; // Explicit slice policy: discard unattached zero-width text.
             return;
         }
-        self.place(Cell::lead(c, width), width, out);
+        self.place(
+            Cell::lead(c, width).with_style(self.active.style),
+            width,
+            out,
+        );
     }
 
     fn place(&mut self, cell: Cell, width: u8, out: &mut FeedOutcome) {
@@ -419,14 +429,15 @@ impl Terminal {
                 self.size.columns,
             );
             self.active.rows[self.active.cursor.row].cells[self.active.cursor.column] =
-                Cell::WRAP_PADDING;
+                Cell::WRAP_PADDING.with_style(cell.style_id());
             self.wrap(out);
         }
         let (row, col) = (self.active.cursor.row, self.active.cursor.column);
         self.erase(row, col, col + usize::from(width));
+        let style = cell.style_id();
         self.active.rows[row].cells[col] = cell;
         if width == 2 {
-            self.active.rows[row].cells[col + 1] = Cell::CONTINUATION;
+            self.active.rows[row].cells[col + 1] = Cell::CONTINUATION.with_style(style);
         }
         self.last_lead = Some((row, col));
         self.set_after(row, col, width);
@@ -444,6 +455,21 @@ impl Terminal {
                 .is_some_and(|p| !p.valid(self.size, self.limits))
         {
             return false;
+        }
+        for screen in std::iter::once(&self.active).chain(self.saved_primary.iter()) {
+            if screen
+                .style_roots()
+                .iter()
+                .any(|id| self.style(*id).is_none())
+                || screen
+                    .rows
+                    .iter()
+                    .chain(&screen.history)
+                    .flat_map(|r| &r.cells)
+                    .any(|c| self.style(c.style_id()).is_none())
+            {
+                return false;
+            }
         }
         self.last_lead.is_none_or(|(r, c)| {
             matches!(
