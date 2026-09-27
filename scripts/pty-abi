@@ -1,0 +1,89 @@
+#!/usr/bin/env python3
+"""Compare owned macOS bindings with independent SDK C declarations; optional evidence."""
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import runpy
+import shlex
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def write(path, value):
+    path.write_text(json.dumps(value, indent=2) + "\n")
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args()
+    if sys.platform != "darwin":
+        if args.output:
+            parser.error("SDK ABI recording requires macOS")
+        print("macOS SDK ABI probe skipped on this platform.")
+        return
+    log = []
+
+    def run(command):
+        result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True)
+        log.append({"command": command, "exit_code": result.returncode,
+                    "stdout": result.stdout, "stderr": result.stderr})
+        if result.returncode:
+            raise RuntimeError(result.stdout + result.stderr)
+        return result.stdout.strip()
+
+    source_manifest = runpy.run_path(str(ROOT / "scripts/replay"))["source_manifest"]
+    sources = source_manifest()
+    started = datetime.now(timezone.utc).isoformat()
+    if args.output:
+        args.output.mkdir(parents=True, exist_ok=False)
+    out = ROOT / "target/pty-abi"
+    out.mkdir(parents=True, exist_ok=True)
+    c, rust = out / "sdk", out / "rust"
+    deps = out / "sdk.d"
+    run(["xcrun", "clang", "-std=c11", "-Wall", "-Wextra", "-Werror", "-MD", "-MF", str(deps),
+         "experiments/pty-session/tests/abi/sdk.c", "-o", str(c)])
+    run(["rustc", "--edition=2024", "--cfg", "test", "-Dwarnings",
+         "experiments/pty-session/tests/abi/rust.rs", "-o", str(rust)])
+
+    def values(program):
+        lines = run([str(program)]).splitlines()
+        result = dict(line.split("=", 1) for line in lines)
+        if len(result) != len(lines):
+            raise RuntimeError("duplicate ABI keys")
+        return {key: int(value) for key, value in result.items()}
+
+    expected, actual = values(c), values(rust)
+    if expected != actual or len(expected) != 39:
+        raise RuntimeError(f"SDK ABI mismatch: C={expected}, Rust={actual}")
+    stable = sources == source_manifest()
+    if not stable:
+        raise RuntimeError("sources changed during ABI check")
+    if args.output:
+        headers = shlex.split(deps.read_text().replace("\\\n", " ").split(":", 1)[1])
+        write(args.output / "sdk-inputs.json", {str(Path(p).resolve()): digest(Path(p)) for p in headers})
+        write(args.output / "sources.json", sources)
+        write(args.output / "summary.json", {"success": True, "measurement_kind": "SDK_ABI_correctness",
+              "checked_values": len(expected), "sdk": expected, "rust": actual,
+              "function_prototypes_checked": 8, "sources_unchanged_during_run": stable})
+        write(args.output / "environment.json", {"started_utc": started,
+              "finished_utc": datetime.now(timezone.utc).isoformat(), "git_commit": run(["git", "rev-parse", "HEAD"]),
+              "git_dirty": bool(run(["git", "status", "--porcelain"])), "rustc": run(["rustc", "-Vv"]),
+              "sdk_path": run(["xcrun", "--show-sdk-path"]), "sdk_version": run(["xcrun", "--show-sdk-version"]),
+              "clang": run(["xcrun", "clang", "--version"]), "macos": run(["sw_vers"]),
+              "sdk_probe_sha256": digest(c), "rust_probe_sha256": digest(rust)})
+        write(args.output / "commands.json", log)
+        write(args.output / "artifacts.json", {p.name: digest(p) for p in sorted(args.output.iterdir()) if p.is_file()})
+    print("macOS PTY ABI: 39 SDK/Rust values and eight function prototypes match.")
+
+
+if __name__ == "__main__":
+    main()

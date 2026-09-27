@@ -129,6 +129,9 @@ impl Pump {
                 {
                     let bytes = match input {
                         crate::input::Input::Text(text) => text.into_bytes(),
+                        crate::input::Input::Paste(text) => {
+                            self.terminal.encode_paste(&text).expect("validated paste")
+                        }
                         crate::input::Input::Key(key) => {
                             self.terminal.encode_key(key).expect("validated key")
                         }

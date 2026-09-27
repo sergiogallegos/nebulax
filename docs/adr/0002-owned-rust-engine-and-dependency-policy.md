@@ -2,6 +2,8 @@
 
 Status: accepted by owner instruction on 2026-09-26. Supersedes ADR 0001's complete-engine reuse-first direction.
 
+Subsequent decision: [ADR 0018](0018-standard-library-only-rust.md) supersedes the third-party-crate allowance below with a standard-library-only Rust goal. The owned-engine and isolated-reference directions remain in force; the original decision is preserved here as history.
+
 ## Decision
 
 Nebulax will develop its terminal engine in Rust. Study existing engines, including Ghostty, for behavior, logic, architecture and design, then implement the required behavior in Nebulax. Ghostty libraries are not planned product dependencies. Alacritty remains an isolated research baseline; its presence in the experiment does not select it for the product.

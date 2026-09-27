@@ -4,6 +4,8 @@ Status: accepted by the owner on 2026-09-26.
 
 Subsequent decision: [ADR 0002](0002-owned-rust-engine-and-dependency-policy.md) supersedes the complete-engine reuse-first direction with an owned Rust engine and minimal dependencies. Other decisions remain in force.
 
+Later clarification: [ADR 0017](0017-reusable-library-and-native-backends.md) makes reuse by third-party applications an explicit goal and selects direct platform GPU backends, superseding the required Metal/wgpu comparison. The original decision below remains historical.
+
 ## Context and decision
 
 The owner explicitly approved the revised architecture direction and proceeding with repository bootstrap and Phase 0. This satisfies the original specification's Phase C gate. The acceptance follows the technical review recorded in [the decision checklist](../../review/OWNER_DECISIONS.md).

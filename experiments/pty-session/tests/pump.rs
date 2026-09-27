@@ -347,3 +347,58 @@ fn queued_keys_use_dispatch_time_modes_but_partial_key_writes_are_immutable() {
     assert_eq!(wire.output, b"\x1b[0n\x1bOA\x1bOB\x1b[D");
     assert!(!pump.diagnostics().unsupported);
 }
+
+#[test]
+fn partial_paste_frame_survives_mode_reset_and_serializes_replies_and_next_input() {
+    use nebulax_pty_session::input::Input;
+    let mut wire = Wire::new(b"\x1b[5n");
+    wire.eof = false;
+    wire.write_budget = 1;
+    let mut pump = Pump::new(engine());
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::WriteBlocked);
+    pump.queue_input(Input::Paste("界\r\na\tb".into())).unwrap();
+    wire.input.extend(b"\x1b[?2004h");
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::Yield);
+    // Finish the existing reply and write just one byte of the paste start.
+    wire.write_budget = 4;
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::WriteBlocked);
+    assert_eq!(wire.output, b"\x1b[0n\x1b");
+    pump.queue_input(Input::Paste("next\n".into())).unwrap();
+    wire.input.extend(b"\x1b[!p\x1b[?2004$p");
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::Yield);
+    wire.write_budget = 128;
+    assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::ReadBlocked);
+    assert_eq!(
+        wire.output,
+        "\x1b[0n\x1b[200~界\ra\tb\x1b[201~\x1b[?2004;2$ynext\r".as_bytes()
+    );
+    assert!(!pump.diagnostics().unsupported);
+    assert_eq!(pump.retained_event_bytes(), 0);
+}
+
+#[test]
+fn every_paste_frame_short_write_offset_preserves_exact_bytes() {
+    use nebulax_pty_session::input::{Input, InputError};
+    let expected = "\x1b[200~é\t界\rz\x1b[201~".as_bytes();
+    for cut in 0..expected.len() {
+        let mut t = engine();
+        t.feed(b"\x1b[?2004h");
+        let mut pump = Pump::new(t);
+        let mut wire = Wire::new(b"");
+        wire.eof = false;
+        wire.write_budget = cut;
+        assert_eq!(
+            pump.queue_input(Input::Paste("\x1b[201~".into())),
+            Err(InputError::Invalid)
+        );
+        pump.queue_input(Input::Paste("é\t界\nz".into())).unwrap();
+        assert_eq!(pump.step(&mut wire, |_| true).unwrap(), Step::WriteBlocked);
+        assert_eq!(wire.output, expected[..cut]);
+        assert_eq!(pump.retained_event_bytes(), expected.len());
+        wire.write_budget = usize::MAX;
+        wire.write_chunk = 1;
+        while pump.step(&mut wire, |_| true).unwrap() == Step::Yield {}
+        assert_eq!(wire.output, expected);
+        assert_eq!(pump.retained_event_bytes(), 0);
+    }
+}

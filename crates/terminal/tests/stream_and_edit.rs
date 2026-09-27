@@ -256,6 +256,12 @@ fn deterministic_mixed_streams_preserve_state_invariants_for_each_byte() {
         b"\x1b]ignore\x07",
         b"\x18",
         b"\x1b[?1049h",
+        b"\x1b[?1049l",
+        b"\x1b[4h",
+        b"\x1b[4l",
+        b"\x1b[?7l",
+        b"\x1b[?7h",
+        "⌚\u{fe0e}".as_bytes(),
     ];
     let mut seed = 0x1234_5678_u32;
     for columns in 2..=8 {

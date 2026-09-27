@@ -11,9 +11,6 @@ description = "Bounded PTY lifecycle research with the owned terminal engine"
 [dependencies]
 nebulax-terminal = { path = "../../crates/terminal" }
 
-[target.'cfg(target_os = "macos")'.dependencies]
-libc = "=0.2.189"
-
 # The sole exception is the private macOS OS-binding module.
 [lints.rust]
 unsafe_code = "deny"

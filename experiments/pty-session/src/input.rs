@@ -1,5 +1,5 @@
 //! Bounded native input mailbox. Acceptance is atomic and not delivery success.
-use nebulax_terminal::input::Key;
+use nebulax_terminal::input::{Key, PASTE_FRAME_BYTES, valid_paste};
 use std::collections::VecDeque;
 pub const MAX_INPUT_EVENT: usize = 4096;
 pub const MAX_INPUT_BYTES: usize = 16384;
@@ -7,6 +7,7 @@ pub const MAX_INPUT_EVENTS: usize = 64;
 #[derive(Debug)]
 pub enum Input {
     Text(String),
+    Paste(String),
     Key(Key),
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -19,6 +20,7 @@ impl Input {
     pub fn bytes(&self) -> usize {
         match self {
             Self::Text(s) => s.len(),
+            Self::Paste(s) => s.len().saturating_add(PASTE_FRAME_BYTES),
             Self::Key(_) => 4,
         }
     }
@@ -27,6 +29,7 @@ impl Input {
             Self::Text(s) => {
                 !s.is_empty() && s.len() <= MAX_INPUT_EVENT && !s.chars().any(char::is_control)
             }
+            Self::Paste(s) => valid_paste(s),
             Self::Key(Key::Control(n)) => *n < 32,
             Self::Key(_) => true,
         }
@@ -84,5 +87,41 @@ mod tests {
         }
         assert!(q.is_empty());
         assert_eq!(q.bytes, 0);
+    }
+}
+
+#[cfg(test)]
+mod paste_tests {
+    use super::*;
+    #[test]
+    fn paste_mailbox_reserves_framing_and_rejection_keeps_queue_intact() {
+        let mut q = InputQueue::default();
+        for _ in 0..3 {
+            q.push(Input::Paste("x".repeat(4096))).unwrap();
+        }
+        assert_eq!(
+            q.push(Input::Paste("x".repeat(4096))),
+            Err(InputError::Full)
+        );
+        let remaining = MAX_INPUT_BYTES - 3 * (4096 + PASTE_FRAME_BYTES);
+        q.push(Input::Paste("y".repeat(remaining - PASTE_FRAME_BYTES)))
+            .unwrap();
+        assert_eq!(q.bytes, MAX_INPUT_BYTES);
+        assert_eq!(
+            q.push(Input::Paste("\x1b[201~".into())),
+            Err(InputError::Invalid)
+        );
+        assert_eq!(q.push(Input::Text("z".into())), Err(InputError::Full));
+        for _ in 0..3 {
+            assert!(matches!(q.pop(), Some(Input::Paste(s)) if s == "x".repeat(4096)));
+        }
+        assert!(
+            matches!(q.pop(), Some(Input::Paste(s)) if s.len() == remaining - PASTE_FRAME_BYTES)
+        );
+        assert_eq!(q.bytes, 0);
+        for _ in 0..MAX_INPUT_EVENTS {
+            q.push(Input::Paste("\n".into())).unwrap();
+        }
+        assert_eq!(q.push(Input::Paste("z".into())), Err(InputError::Full));
     }
 }

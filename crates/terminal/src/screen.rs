@@ -61,6 +61,29 @@ impl Screen {
             self.saved_cursor.erase_style,
         ]
     }
+
+    /// Reset the active buffer's control state without touching stored cells.
+    /// Autowrap returns to Nebulax's startup default (on).
+    pub fn soft_reset(&mut self) {
+        self.origin = false;
+        self.autowrap = true;
+        self.top = 0;
+        self.bottom = self.rows.len() - 1;
+        self.style = 0;
+        self.erase_style = 0;
+        self.saved_cursor = SavedCursor::default();
+        self.cursor.wrap_pending = false;
+    }
+
+    /// Reuse visible row buffers, releasing all text tails and history storage.
+    pub fn hard_reset(&mut self) {
+        self.soft_reset();
+        self.cursor = Cursor::default();
+        self.history = VecDeque::new();
+        for row in &mut self.rows {
+            row.clear(0);
+        }
+    }
     pub fn position(&mut self, row: usize, column: usize) {
         let top = if self.origin { self.top } else { 0 };
         let bottom = if self.origin {
@@ -174,13 +197,25 @@ impl Screen {
     pub fn edit_characters(&mut self, count: usize, insert: bool) {
         let row = self.cursor.row;
         let start = self.cursor.column;
-        let columns = self.rows[row].cells.len();
-        let count = count.min(columns - start);
-        self.break_wrap(row); // Structural padding must never move into a row.
         let starts_in_tail = matches!(self.rows[row].cells[start].view(), CellView::Continuation);
         if start == 0 || (start == 1 && starts_in_tail) {
             self.detach_before(row);
         }
+        self.shift_columns(row, start, count, insert);
+        self.cursor.wrap_pending = false;
+    }
+
+    /// Shared column movement for explicit edits and IRM printing. Preserve the
+    /// incoming wrap link so printing after an automatic wrap stays reflowable.
+    /// Outgoing wrap/padding is broken before moving physical columns.
+    pub fn shift_columns(&mut self, row: usize, start: usize, count: usize, insert: bool) {
+        let columns = self.rows[row].cells.len();
+        let count = count.min(columns - start);
+        if count == 0 {
+            return;
+        }
+        self.break_wrap(row);
+        let starts_in_tail = matches!(self.rows[row].cells[start].view(), CellView::Continuation);
         if insert {
             if starts_in_tail {
                 self.erase(row, start, start + 1);
@@ -197,7 +232,6 @@ impl Screen {
             self.rows[row].cells[start..].rotate_left(count);
             self.rows[row].cells[columns - count..].fill(Cell::EMPTY.with_style(self.erase_style));
         }
-        self.cursor.wrap_pending = false;
     }
 
     /// Move whole rows only inside the cursor-to-bottom part of the region.

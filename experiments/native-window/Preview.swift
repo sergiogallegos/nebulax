@@ -233,6 +233,14 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
         let result = bytes.withUnsafeBufferPointer { nb_session_text(session, NbBytes(data: $0.baseAddress, len: $0.count)) }
         inputResult(result)
     }
+    func pasteInput(_ text: String) {
+        guard !closing, session != 0 else { return }
+        // Bounded explicit native input. Clipboard/menu integration is separate.
+        guard text.utf8.count <= 4096 else { inputResult(Int32(NB_LIMIT)); return }
+        let bytes = Array(text.utf8)
+        let result = bytes.withUnsafeBufferPointer { nb_session_paste(session, NbBytes(data: $0.baseAddress, len: $0.count)) }
+        inputResult(result)
+    }
     func keyInput(_ key: UInt32) {
         guard !closing, session != 0 else { return }
         inputResult(nb_session_key(session, key))
@@ -312,7 +320,10 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
             precondition(text.contains("Key: Up") && text.contains("You typed: Rust 界"))
             precondition(text.contains("PROTOCOL OK") && text.contains("APP KEY Up") && text.contains("REGION OK"))
             precondition(text.contains("FIXED TOP") && text.contains("FIXED BOTTOM"))
-            precondition(text.contains("STYLE OK"))
+            precondition(text.contains("STYLE OK") && text.contains("STARTUP OK"))
+            precondition(text.contains("RESET OK") && !text.contains("STALE"))
+            let resetStyle = frame.view.styles![Int(frame.view.cells![0].style_id)]
+            precondition(resetStyle.foreground == 0 && resetStyle.background == 0 && resetStyle.attributes == 0)
             precondition(text.contains("EDITOK") && !text.contains("INSERTED"))
             precondition(frame.view.cells![15 * 90 + 4].kind == 0)
             let edited = frame.view.cells![15 * 90 + 5]
@@ -371,13 +382,32 @@ final class Preview: NSObject, NSApplicationDelegate, NSWindowDelegate {
             try! bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: option("--output")!).appendingPathComponent("window.png"))
             hiddenBitmap = nil
             testStage = 6
+            event("p", code: 35)
+        } else if testStage == 6 && text.contains("PASTE READY") {
+            pasteInput("界\ta\r\nb\nc\rd")
+            precondition(inputMessage == nil)
+            testStage = 7
+        } else if testStage == 7 && text.contains("PASTE OK") {
+            precondition(text.contains("IRM OK"))
+            for (column, expected) in [UInt8]("IRM OK".utf8).enumerated() {
+                let cell = frame.view.cells![10 * 90 + column]
+                precondition(cell.text_len == 1 && frame.view.text![Int(cell.text_offset)] == expected)
+            }
+            renderedText = text
+            grid.displayIfNeeded()
+            let bitmap = grid.bitmapImageRepForCachingDisplay(in: grid.bounds)!
+            grid.cacheDisplay(in: grid.bounds, to: bitmap)
+            try! bitmap.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: option("--output")!).appendingPathComponent("paste.png"))
+            testStage = 8
             window.performClose(nil)
         }
     }
     func recordSuccess() {
-        let result: [String: Any] = ["success": true, "native_key_events": 7, "resize_columns": 90, "resize_lines": 25,
+        let result: [String: Any] = ["success": true, "native_key_events": 8, "explicit_paste_events": 1, "insert_mode_and_queries_verified": renderedText.contains("IRM OK"), "paste_framing_and_newlines_verified": renderedText.contains("PASTE OK"), "resize_columns": 90, "resize_lines": 25,
                                   "paint_count": grid.paintCount, "close_heartbeat_progress": heartbeat - closeHeartbeat,
                                   "typed_text_seen": renderedText.contains("You typed: Rust 界"), "arrow_seen": renderedText.contains("Key: Up"),
+                                  "device_status_and_mode_startup_verified": renderedText.contains("STARTUP OK"),
+                                  "soft_hard_reset_startup_verified": renderedText.contains("RESET OK"),
                                   "application_cursor_reply_and_region_seen": renderedText.contains("PROTOCOL OK") && renderedText.contains("APP KEY Up") && renderedText.contains("REGION OK"),
                                   "outside_region_rows_preserved": renderedText.contains("FIXED TOP") && renderedText.contains("FIXED BOTTOM"),
                                   "character_and_region_line_edits_verified": true, "tabs_and_full_line_erase_verified": true, "styled_wide_cell_and_erased_background_verified": true, "abi_version": nb_abi_version(),

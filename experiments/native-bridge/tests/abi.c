@@ -20,6 +20,10 @@ int main(void) {
     assert(nb_session_start((NbBytes){NULL, 1}, NULL, 0, 8, 3, &handle) == NB_INVALID);
     assert(nb_session_start((NbBytes){NULL, SIZE_MAX}, NULL, 0, 8, 3, &handle) == NB_LIMIT);
     assert(handle == 12345);
+    assert(nb_session_paste(0, (NbBytes){NULL, 1}) == NB_INVALID);
+    assert(nb_session_paste(0, (NbBytes){NULL, SIZE_MAX}) == NB_LIMIT);
+    const uint8_t invalid_utf8[] = {0xff};
+    assert(nb_session_paste(0, (NbBytes){invalid_utf8, 1}) == NB_INVALID);
     assert(nb_session_status(UINT64_MAX, &status) == NB_INVALID);
     assert(nb_session_status(0, NULL) == NB_INVALID);
     assert(nb_frame_acquire(0, 0, NULL) == NB_INVALID);

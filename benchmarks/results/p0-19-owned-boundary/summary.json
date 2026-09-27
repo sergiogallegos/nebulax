@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "kind": "snapshot_worker_ffi_correctness_not_performance",
+  "success": true,
+  "rust_tests_passed": 166,
+  "expected_rust_tests": 166,
+  "c_smoke_passed": true,
+  "swift_smoke_passed": true,
+  "sources_unchanged_during_run": true,
+  "limits": [
+    "headless check; no GUI renderer exercised",
+    "snapshot damage computed by visible-row comparison",
+    "2 ms worker cadence is not a performance result"
+  ]
+}

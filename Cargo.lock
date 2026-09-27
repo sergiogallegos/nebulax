@@ -249,7 +249,6 @@ dependencies = [
 name = "nebulax-pty-session"
 version = "0.1.0"
 dependencies = [
- "libc",
  "nebulax-terminal",
 ]
 

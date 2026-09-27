@@ -278,6 +278,20 @@ pub unsafe extern "C" fn nb_session_text(handle: u64, text: NbBytes) -> i32 {
             .input(handle, nebulax_pty_session::input::Input::Text(text))
     })
 }
+/// # Safety
+/// text.data must be readable for text.len bytes until return. UTF-8 is copied.
+// SAFETY: unique private ABI export matching the checked header.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nb_session_paste(handle: u64, text: NbBytes) -> i32 {
+    boundary(|| {
+        // SAFETY: caller provides a readable buffer; string checks bounded length.
+        let text = unsafe { string(text) }?;
+        registry::global()
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .input(handle, nebulax_pty_session::input::Input::Paste(text))
+    })
+}
 // SAFETY: unique private ABI export matching the checked header.
 #[unsafe(no_mangle)]
 pub extern "C" fn nb_session_key(handle: u64, key: u32) -> i32 {

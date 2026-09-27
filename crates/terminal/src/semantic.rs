@@ -1,5 +1,6 @@
 //! Terminal meaning is separate from bounded syntax and output transport.
 use crate::parser::{Event, Header};
+use crate::query::Query;
 use crate::{FeedOutcome, OutputEvent, Terminal, TitleTarget};
 
 enum Action {
@@ -8,8 +9,10 @@ enum Action {
     Position(Option<usize>, Option<usize>),
     Margins(usize, usize),
     Modes(Header, bool),
+    InsertMode(bool),
     Save,
     Restore,
+    Reset(bool),
     Index(bool),
     ReverseIndex,
     Erase(usize),
@@ -20,12 +23,22 @@ enum Action {
     Tab(usize, bool),
     SetTab,
     ClearTabs(bool),
-    Query(u16),
+    Report(Query),
     Rendition(Header),
     Unsupported,
 }
 fn csi(header: Header, final_byte: u8) -> Action {
     use Action::*;
+    if header.prefix().is_none()
+        && header.parameters().is_empty()
+        && header.intermediates() == b"!"
+        && final_byte == b'p'
+    {
+        return Reset(false);
+    }
+    if let Some(query) = Query::parse(header, final_byte) {
+        return Report(query);
+    }
     let params = header.parameters();
     if header.prefix().is_none() && header.intermediates().is_empty() && final_byte == b'm' {
         return Rendition(header);
@@ -40,7 +53,7 @@ fn csi(header: Header, final_byte: u8) -> Action {
         return if !params.is_empty()
             && params
                 .iter()
-                .all(|p| matches!(p.value, Some(1 | 6 | 7 | 25 | 1049)))
+                .all(|p| matches!(p.value, Some(1 | 6 | 7 | 25 | 1049 | 2004)))
         {
             Modes(header, final_byte == b'h')
         } else {
@@ -49,6 +62,13 @@ fn csi(header: Header, final_byte: u8) -> Action {
     }
     if header.prefix().is_some() {
         return Unsupported;
+    }
+    if matches!(final_byte, b'h' | b'l') {
+        return if !params.is_empty() && params.iter().all(|p| p.value == Some(4)) {
+            InsertMode(final_byte == b'h')
+        } else {
+            Unsupported
+        };
     }
     if params.len() <= 2 {
         match final_byte {
@@ -87,7 +107,6 @@ fn csi(header: Header, final_byte: u8) -> Action {
         (_, b'Z') => Tab(usize::from(n.max(1)), false),
         (0, b'g') => ClearTabs(false),
         (3, b'g') => ClearTabs(true),
-        (n @ (5 | 6), b'n') => Query(n),
         _ => Unsupported,
     }
 }
@@ -105,6 +124,8 @@ fn esc(header: Header, final_byte: u8) -> Action {
         b'E' => Action::Index(true),
         b'M' => Action::ReverseIndex,
         b'H' => Action::SetTab,
+        b'Z' => Action::Report(Query::PrimaryAttributes),
+        b'c' => Action::Reset(true),
         _ => Action::Unsupported,
     }
 }
@@ -183,11 +204,14 @@ impl Terminal {
             self.end_cluster();
         }
         match action {
+            Action::Reset(hard) => self.reset(hard, out),
+            Action::InsertMode(enabled) => self.insert_mode = enabled,
             Action::Modes(header, enabled) => {
                 self.end_cluster();
                 for parameter in header.parameters() {
                     match parameter.value.unwrap() {
                         1 => self.application_cursor = enabled,
+                        2004 => self.bracketed_paste = enabled,
                         6 => {
                             self.active.set_origin(enabled);
                             out.changed = true;
@@ -283,24 +307,7 @@ impl Terminal {
                 self.end_cluster();
                 out.unsupported = true;
             }
-            Action::Query(5) => self.output.emit(OutputEvent::Reply(b"\x1b[0n".to_vec())),
-            Action::Query(6) => {
-                let c = self.cursor();
-                self.output.emit(OutputEvent::Reply(
-                    format!(
-                        "\x1b[{};{}R",
-                        c.row + 1
-                            - if self.active.origin {
-                                self.active.top
-                            } else {
-                                0
-                            },
-                        c.column + 1
-                    )
-                    .into_bytes(),
-                ));
-            }
-            Action::Query(_) => out.unsupported = true,
+            Action::Report(query) => self.output.emit(OutputEvent::Reply(query.reply(self))),
             Action::Control(b) => {
                 self.end_cluster();
                 match b {

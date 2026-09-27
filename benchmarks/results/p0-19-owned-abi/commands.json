@@ -1,0 +1,117 @@
+[
+  {
+    "command": [
+      "xcrun",
+      "clang",
+      "-std=c11",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-MD",
+      "-MF",
+      "/Users/sergiogallegos/projects/nebulax/target/pty-abi/sdk.d",
+      "experiments/pty-session/tests/abi/sdk.c",
+      "-o",
+      "/Users/sergiogallegos/projects/nebulax/target/pty-abi/sdk"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "rustc",
+      "--edition=2024",
+      "--cfg",
+      "test",
+      "-Dwarnings",
+      "experiments/pty-session/tests/abi/rust.rs",
+      "-o",
+      "/Users/sergiogallegos/projects/nebulax/target/pty-abi/rust"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/Users/sergiogallegos/projects/nebulax/target/pty-abi/sdk"
+    ],
+    "exit_code": 0,
+    "stdout": "int.size=4\nint.align=4\nulong.size=8\nulong.align=8\npid.size=4\npid.align=4\nsigset.size=4\nsigset.align=4\nwinsize.size=8\nwinsize.align=2\nsigaction.size=16\nsigaction.align=8\nwinsize.rows=0\nwinsize.columns=2\nwinsize.xpixel=4\nwinsize.ypixel=6\nsigaction.handler=0\nsigaction.mask=8\nsigaction.flags=12\nempty_mask=0\ndefault_handler_is_null=1\nO_NOCTTY=131072\nO_NONBLOCK=4\nTIOCSWINSZ=2148037735\nTIOCPTYGNAME=1082160211\nTIOCSCTTY=536900705\nSIG_SETMASK=3\nWNOHANG=1\nECHILD=10\nsignal.0=1\nsignal.1=2\nsignal.2=3\nsignal.3=15\nsignal.4=13\nsignal.5=20\nsignal.6=28\nsignal.7=18\nsignal.8=21\nsignal.9=22\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/Users/sergiogallegos/projects/nebulax/target/pty-abi/rust"
+    ],
+    "exit_code": 0,
+    "stdout": "int.size=4\nint.align=4\nulong.size=8\nulong.align=8\npid.size=4\npid.align=4\nsigset.size=4\nsigset.align=4\nwinsize.size=8\nwinsize.align=2\nsigaction.size=16\nsigaction.align=8\nwinsize.rows=0\nwinsize.columns=2\nwinsize.xpixel=4\nwinsize.ypixel=6\nsigaction.handler=0\nsigaction.mask=8\nsigaction.flags=12\nempty_mask=0\ndefault_handler_is_null=1\nO_NOCTTY=131072\nO_NONBLOCK=4\nTIOCSWINSZ=2148037735\nTIOCPTYGNAME=1082160211\nTIOCSCTTY=536900705\nSIG_SETMASK=3\nWNOHANG=1\nECHILD=10\nsignal.0=1\nsignal.1=2\nsignal.2=3\nsignal.3=15\nsignal.4=13\nsignal.5=20\nsignal.6=28\nsignal.7=18\nsignal.8=21\nsignal.9=22\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "exit_code": 0,
+    "stdout": "c069a6be4582681d4fb6f919b822904cf5df7b04\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "exit_code": 0,
+    "stdout": " M AGENTS.md\n M Cargo.lock\n M HANDOFF.md\n M benchmarks/README.md\n M crates/terminal/README.md\n M crates/terminal/src/lib.rs\n M crates/terminal/src/screen.rs\n M crates/terminal/src/semantic.rs\n M docs/adr/0001-approved-direction.md\n M docs/adr/0002-owned-rust-engine-and-dependency-policy.md\n M docs/adr/0007-pty-lifecycle-experiment.md\n M docs/architecture/REPOSITORY_MAP.md\n M docs/architecture/STATUS.md\n M docs/development/BUILD.md\n M experiments/native-bridge/README.md\n M experiments/native-window/Preview.swift\n M experiments/native-window/README.md\n M experiments/native-window/peer.py\n M experiments/pty-session/Cargo.toml\n M experiments/pty-session/README.md\n M experiments/pty-session/src/os.rs\n M experiments/pty-session/tests/worker.rs\n M plans/NOW.md\n M scripts/native-bridge\n M scripts/pty-session\n M scripts/verify\n?? benchmarks/results/p0-17-replies-boundary/\n?? benchmarks/results/p0-17-replies-native/\n?? benchmarks/results/p0-18-reset-boundary/\n?? benchmarks/results/p0-18-reset-native/\n?? benchmarks/results/p0-19-owned-abi/\n?? crates/terminal/src/query.rs\n?? crates/terminal/tests/device_replies.rs\n?? crates/terminal/tests/resets.rs\n?? docs/adr/0016-device-and-mode-replies.md\n?? docs/adr/0017-reusable-library-and-native-backends.md\n?? docs/adr/0018-standard-library-only-rust.md\n?? docs/adr/0019-soft-and-hard-terminal-reset.md\n?? docs/adr/0020-owned-macos-pty-bindings.md\n?? experiments/pty-session/src/os/\n?? experiments/pty-session/tests/abi/\n?? experiments/pty-session/tests/reset_peer.py\n?? experiments/pty-session/tests/startup_peer.py\n?? research/2026-09-27-device-replies.md\n?? research/2026-09-27-owned-pty-bindings.md\n?? research/2026-09-27-terminal-reset.md\n?? scripts/check-product-deps\n?? scripts/pty-abi\n?? tests/tooling/test_product_deps.py\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "rustc",
+      "-Vv"
+    ],
+    "exit_code": 0,
+    "stdout": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "xcrun",
+      "--show-sdk-path"
+    ],
+    "exit_code": 0,
+    "stdout": "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "xcrun",
+      "--show-sdk-version"
+    ],
+    "exit_code": 0,
+    "stdout": "27.0\n",
+    "stderr": "2026-09-27 12:30:54.938 xcodebuild[77458:2493224]  DVTFilePathFSEvents: Failed to start fs event stream.\n2026-09-27 12:30:55.208 xcodebuild[77458:2493219] [MT] DVTDeveloperPaths: Failed to get length of DARWIN_USER_CACHE_DIR from confstr(3), error = Error Domain=NSPOSIXErrorDomain Code=5 \"Input/output error\". Using NSCachesDirectory instead.\n"
+  },
+  {
+    "command": [
+      "xcrun",
+      "clang",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout": "Apple clang version 21.0.0 (clang-2100.3.34.2)\nTarget: arm64-apple-darwin27.0.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "sw_vers"
+    ],
+    "exit_code": 0,
+    "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428\n",
+    "stderr": ""
+  }
+]

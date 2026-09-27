@@ -161,3 +161,125 @@ fn visibility_only_pty_output_publishes_a_new_frame_with_unchanged_rows() {
     drop(w);
     assert!(!hidden.cursor_visible() && shown.cursor_visible());
 }
+
+#[test]
+fn application_startup_waits_for_identification_status_and_actual_mode_replies() {
+    let w = start(
+        "python3",
+        &[
+            concat!(env!("CARGO_MANIFEST_DIR"), "/tests/startup_peer.py"),
+            env!("CARGO_PKG_VERSION"),
+        ],
+    );
+    wait(|| w.is_finished());
+    assert_eq!(w.status().phase, Phase::Exited);
+    assert_eq!(w.status().exit_code, 0);
+    assert_eq!(w.status().denied_effects, 0);
+    let frame = w.latest(0).unwrap();
+    assert_eq!(frame.text(), b"START OK");
+    assert!(frame.cursor_visible());
+}
+
+#[test]
+fn soft_and_hard_reset_publish_frames_and_restore_native_key_encoding() {
+    use nebulax_pty_session::input::Input;
+    use nebulax_terminal::{input::Key, style::Style};
+    let w = start(
+        "python3",
+        &[concat!(env!("CARGO_MANIFEST_DIR"), "/tests/reset_peer.py")],
+    );
+    wait(|| {
+        w.latest(0)
+            .is_some_and(|f| f.text() == b"KEEP" && !f.cursor_visible())
+    });
+    let before = w.latest(0).unwrap();
+    w.input(Input::Text("s".into())).unwrap();
+    wait(|| {
+        w.latest(before.generation())
+            .is_some_and(|f| f.cursor_visible())
+    });
+    let soft = w.latest(before.generation()).unwrap();
+    assert_eq!(soft.row_versions(), before.row_versions());
+    assert_eq!(soft.text(), before.text());
+    assert_eq!(soft.cursor(), before.cursor());
+    w.input(Input::Key(Key::Up)).unwrap();
+    wait(|| {
+        w.latest(soft.generation())
+            .is_some_and(|f| f.text().is_empty() && !f.is_alternate() && f.cursor_visible())
+    });
+    let hard = w.latest(soft.generation()).unwrap();
+    assert_eq!(hard.cursor(), nebulax_terminal::Cursor::default());
+    assert_eq!(hard.styles(), [Style::default()]);
+    w.input(Input::Text("r".into())).unwrap();
+    wait(|| w.is_finished());
+    assert_eq!(w.status().phase, Phase::Exited);
+    assert_eq!(w.status().exit_code, 0);
+    assert_eq!(w.status().denied_effects, 0);
+    assert_eq!(w.latest(0).unwrap().text(), b"RESET OK");
+    drop(w);
+    assert_eq!(before.text(), b"KEEP");
+    assert_eq!(
+        before.cell_style(&before.cells()[0]).unwrap().foreground,
+        Style::indexed(1)
+    );
+    assert!(!before.cursor_visible() && soft.cursor_visible());
+}
+
+#[test]
+fn explicit_paste_reaches_real_pty_with_negotiated_framing_and_reset_policy() {
+    use nebulax_pty_session::input::{Input, InputError};
+    let w = start(
+        "python3",
+        &[concat!(env!("CARGO_MANIFEST_DIR"), "/tests/paste_peer.py")],
+    );
+    for stage in 0..3 {
+        wait(|| {
+            w.latest(0)
+                .is_some_and(|f| f.text() == format!("PASTE {stage}").as_bytes())
+        });
+        assert_eq!(
+            w.input(Input::Paste("\x1b[201~".into())),
+            Err(InputError::Invalid)
+        );
+        w.input(Input::Paste("界\ta\r\nb\nc\rd".into())).unwrap();
+    }
+    wait(|| w.is_finished());
+    assert_eq!(w.status().phase, Phase::Exited);
+    assert_eq!(w.status().exit_code, 0);
+    assert_eq!(w.latest(0).unwrap().text(), b"PASTE OK");
+    assert_eq!(
+        w.input(Input::Paste("late".into())),
+        Err(InputError::Closed)
+    );
+}
+
+#[test]
+fn insert_mode_width_changes_and_resets_publish_correct_real_pty_frames() {
+    use nebulax_pty_session::input::Input;
+    let w = start(
+        "python3",
+        &[concat!(env!("CARGO_MANIFEST_DIR"), "/tests/insert_peer.py")],
+    );
+    wait(|| {
+        w.latest(0)
+            .is_some_and(|f| f.text() == "AB❤\u{fe0f}CDEFIRM ON".as_bytes())
+    });
+    let inserted = w.latest(0).unwrap();
+    assert_eq!(inserted.cells()[2].width, 2);
+    w.input(Input::Text("s".into())).unwrap();
+    wait(|| {
+        w.latest(inserted.generation())
+            .is_some_and(|f| f.text() == b"ABZCDEFIRM OFF")
+    });
+    let replaced = w.latest(inserted.generation()).unwrap();
+    assert_eq!(replaced.cells()[2].width, 1);
+    assert_eq!(replaced.cells()[3].kind, 0);
+    assert_ne!(inserted.row_versions()[0], replaced.row_versions()[0]);
+    w.input(Input::Text("r".into())).unwrap();
+    wait(|| w.is_finished());
+    assert_eq!(w.status().phase, Phase::Exited);
+    assert_eq!(w.status().exit_code, 0);
+    assert_eq!(w.latest(0).unwrap().text(), b"IRM OK");
+    drop(w);
+    assert_eq!(inserted.text(), "AB❤\u{fe0f}CDEFIRM ON".as_bytes());
+}

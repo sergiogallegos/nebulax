@@ -6,6 +6,7 @@ mod decoder;
 pub mod input;
 pub mod output;
 pub mod parser;
+mod query;
 mod screen;
 mod semantic;
 pub mod snapshot;
@@ -167,6 +168,8 @@ pub struct Terminal {
     parser: Parser,
     output: Output,
     application_cursor: bool,
+    bracketed_paste: bool,
+    insert_mode: bool,
     cursor_visible: bool,
     styles: style::Styles,
     tabs: tabs::Tabs,
@@ -202,6 +205,8 @@ impl Terminal {
             parser: Parser::default(),
             output: Output::default(),
             application_cursor: false,
+            bracketed_paste: false,
+            insert_mode: false,
             cursor_visible: true,
             styles: style::Styles::default(),
             tabs: tabs::Tabs::new(size.columns),
@@ -243,6 +248,30 @@ impl Terminal {
             self.active = primary;
             out.changed = true;
         }
+    }
+
+    fn reset(&mut self, hard: bool, out: &mut FeedOutcome) {
+        if hard {
+            if let Some(primary) = self.saved_primary.take() {
+                self.active = primary;
+            }
+            out.history_evicted |= !self.active.history.is_empty();
+            self.active.hard_reset();
+            self.styles = style::Styles::default();
+            self.tabs = tabs::Tabs::new(self.size.columns);
+        } else {
+            self.active.soft_reset();
+        }
+        self.application_cursor = false;
+        self.bracketed_paste = false;
+        self.insert_mode = false;
+        self.cursor_visible = true;
+        self.decoder = Decoder::default();
+        self.parser.reset();
+        self.end_cluster();
+        // Completed output belongs to the ordered stream, even across RIS.
+        // Preserve output, geometry, resource limits and Unicode width policy.
+        out.changed = true;
     }
 
     /// Resize both screens; invalid geometry leaves the complete terminal unchanged.
@@ -368,6 +397,11 @@ impl Terminal {
         self.active.cursor.wrap_pending = false;
     }
 
+    /// Terminal-wide ANSI IRM, independent of saved cursors and screen switches.
+    pub fn insert_mode(&self) -> bool {
+        self.insert_mode
+    }
+
     pub fn autowrap(&self) -> bool {
         self.active.autowrap
     }
@@ -413,7 +447,18 @@ impl Terminal {
                     column: col,
                     wrap_pending: false,
                 };
-                self.place(cell, new_width, out);
+                // A cluster has already reserved old_width columns. Adjust only
+                // its suffix by the width delta, never insert the whole owner twice.
+                let relocates = new_width == 2 && col == self.size.columns - 1;
+                if self.insert_mode && !relocates {
+                    self.active.shift_columns(
+                        row,
+                        col + usize::from(old_width.min(new_width)),
+                        usize::from(old_width.abs_diff(new_width)),
+                        new_width > old_width,
+                    );
+                }
+                self.place(cell, new_width, self.insert_mode && relocates, out);
             }
             out.changed = true;
             return;
@@ -427,11 +472,12 @@ impl Terminal {
         self.place(
             Cell::lead(c, width).with_style(self.active.style),
             width,
+            self.insert_mode,
             out,
         );
     }
 
-    fn place(&mut self, cell: Cell, width: u8, out: &mut FeedOutcome) {
+    fn place(&mut self, cell: Cell, width: u8, insert: bool, out: &mut FeedOutcome) {
         if self.active.cursor.wrap_pending {
             self.wrap(out);
         }
@@ -452,6 +498,10 @@ impl Terminal {
             }
         }
         let (row, col) = (self.active.cursor.row, self.active.cursor.column);
+        if insert {
+            self.active
+                .shift_columns(row, col, usize::from(width), true);
+        }
         self.erase(row, col, col + usize::from(width));
         let style = cell.style_id();
         self.active.rows[row].cells[col] = cell;

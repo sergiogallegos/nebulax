@@ -1,5 +1,21 @@
-//! Engine-owned normal/application cursor keyboard profile.
+//! Engine-owned bounded key and paste encoding.
 use crate::Terminal;
+
+/// Maximum raw UTF-8 bytes in one paste. Larger pastes are rejected atomically.
+pub const MAX_PASTE_BYTES: usize = 4096;
+/// Start/end markers add at most twelve bytes to a validated paste.
+pub const PASTE_FRAME_BYTES: usize = 12;
+
+/// Plain text with TAB/CR/LF only; rejects ESC, DEL and other C0/C1 controls.
+/// Rejecting (rather than stripping) controls prevents embedded end markers from
+/// escaping the frame. Clipboard acquisition/confirmation belongs to the host.
+pub fn valid_paste(text: &str) -> bool {
+    !text.is_empty()
+        && text.len() <= MAX_PASTE_BYTES
+        && !text
+            .chars()
+            .any(|c| c.is_control() && !matches!(c, '\t' | '\r' | '\n'))
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Key {
@@ -36,8 +52,37 @@ impl Key {
     }
 }
 impl Terminal {
+    /// Global mode, independent of screen/cursor saves; soft/hard reset clear it.
+    pub fn bracketed_paste(&self) -> bool {
+        self.bracketed_paste
+    }
+
+    /// Encode once on dispatch. LF and CRLF become CR; TAB and all other accepted
+    /// text are preserved. No bytes are emitted for invalid or oversized input.
+    /// The host must serialize the returned frame without interleaving writes.
+    pub fn encode_paste(&self, text: &str) -> Option<Vec<u8>> {
+        if !valid_paste(text) {
+            return None;
+        }
+        let mut bytes = Vec::with_capacity(text.len() + PASTE_FRAME_BYTES);
+        if self.bracketed_paste {
+            bytes.extend_from_slice(b"\x1b[200~");
+        }
+        let mut previous_cr = false;
+        for byte in text.bytes() {
+            if byte != b'\n' || !previous_cr {
+                bytes.push(if byte == b'\n' { b'\r' } else { byte });
+            }
+            previous_cr = byte == b'\r';
+        }
+        if self.bracketed_paste {
+            bytes.extend_from_slice(b"\x1b[201~");
+        }
+        Some(bytes)
+    }
+
     /// Encoded on the engine owner at dispatch time. Kitty keyboard, modified
-    /// function keys and bracketed paste remain unsupported.
+    /// function keys remain unsupported.
     pub fn encode_key(&self, key: Key) -> Option<Vec<u8>> {
         Some(match key {
             Key::Enter => b"\r".to_vec(),

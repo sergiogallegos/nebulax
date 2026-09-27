@@ -1,0 +1,18 @@
+{
+  "started_utc": "2026-09-27T19:04:25.589501+00:00",
+  "finished_utc": "2026-09-27T19:04:30.072279+00:00",
+  "git_commit": "c069a6be4582681d4fb6f919b822904cf5df7b04",
+  "git_dirty": true,
+  "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)\nbinary: rustc\ncommit-hash: 48a229ceaefd4985c50990b14116b6d856af0985\ncommit-date: 2026-09-01\nhost: aarch64-apple-darwin\nrelease: 1.98.1\nLLVM version: 22.1.8",
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0\nBuildVersion:\t\t26A428",
+  "xcode": "Xcode 27.0\nBuild version 27A266a",
+  "sdk": "27.0",
+  "python": "3.14.7",
+  "native_binary_sha256": {
+    "bridge_dylib": "7e6adc7c230a620b362614a1fc7c6dae9d71059926cf62989bd3bdd8aa06ef03",
+    "c_smoke": "fd596b34b389800b61bb98e19b5ef5365ef3bcb6d243b942c603f55fefc71bdc",
+    "swift_smoke": "37f2b42fa30c99fea8c5f2e7e82e9ff3ff20e7137b3fba49f9f0dc73ddbad979"
+  },
+  "bridge_dependencies": "nebulax-native-bridge v0.1.0 (/Users/sergiogallegos/projects/nebulax/experiments/native-bridge)\n\u251c\u2500\u2500 nebulax-pty-session v0.1.0 (/Users/sergiogallegos/projects/nebulax/experiments/pty-session)\n\u2502   \u2514\u2500\u2500 nebulax-terminal v0.1.0 (/Users/sergiogallegos/projects/nebulax/crates/terminal)\n\u2514\u2500\u2500 nebulax-terminal v0.1.0 (/Users/sergiogallegos/projects/nebulax/crates/terminal)"
+}

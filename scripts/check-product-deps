@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""Reject third-party Cargo dependencies in the owned engine/session/bridge closure."""
+import json
+from pathlib import Path
+import subprocess
+
+ROOT = Path(__file__).resolve().parent.parent
+OWNED = {"nebulax-terminal": "crates/terminal", "nebulax-pty-session": "experiments/pty-session",
+         "nebulax-native-bridge": "experiments/native-bridge"}
+ROOTS = tuple(OWNED)
+
+
+def check(metadata, root=ROOT):
+    members = set(metadata["workspace_members"])
+    packages = {p["name"]: p for p in metadata["packages"] if p["id"] in members}
+    paths = {Path(p["manifest_path"]).resolve().parent: p for p in packages.values()}
+    pending = [packages[name] for name in ROOTS]
+    visited = set()
+    while pending:
+        package = pending.pop()
+        if package["id"] in visited:
+            continue
+        visited.add(package["id"])
+        if package.get("source") is not None:
+            raise ValueError(f'{package["name"]}: external package source')
+        expected = OWNED.get(package["name"])
+        if expected is None or Path(package["manifest_path"]).resolve() != (root / expected / "Cargo.toml").resolve():
+            raise ValueError(f'{package["name"]}: package is not an approved owned component')
+        # Metadata lists declarations of every kind/target, including optional
+        # and disabled dependencies, unlike the current-feature cargo tree.
+        for dependency in package["dependencies"]:
+            path = dependency.get("path")
+            owned = paths.get(Path(path).resolve()) if path else None
+            if dependency.get("source") is not None or owned is None:
+                raise ValueError(f'{package["name"]}: disallowed dependency {dependency["name"]}')
+            pending.append(owned)
+    return sorted(visited)
+
+
+def main():
+    metadata = json.loads(subprocess.check_output(
+        ["cargo", "metadata", "--no-deps", "--locked", "--offline", "--format-version=1"], cwd=ROOT))
+    checked = check(metadata)
+    print(f"Owned Cargo closure: {len(checked)} workspace packages, zero third-party dependencies (all kinds/targets).")
+
+
+if __name__ == "__main__":
+    main()

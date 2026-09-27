@@ -2,6 +2,8 @@
 set -eu
 cd "$(dirname "$0")/.."
 python3 scripts/generate-unicode.py --check
+python3 scripts/check-product-deps
+python3 scripts/pty-abi
 cargo fmt --all --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
 cargo test --workspace --locked

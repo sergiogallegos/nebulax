@@ -55,6 +55,13 @@ int32_t nb_session_resize(uint64_t session, uint32_t columns, uint32_t lines);
  * 8 right, 9 home, 10 end, 11 delete; 32..63 encode C0 controls 0..31.
  */
 int32_t nb_session_text(uint64_t session, NbBytes text);
+/* Explicit paste: nonempty UTF-8 <=4096 bytes; TAB/CR/LF allowed, other
+ * C0/C1/DEL controls rejected atomically. LF/CRLF normalize to CR. The mailbox
+ * reserves payload+12 bytes; mode 2004 is sampled once at worker dispatch.
+ * One complete frame is serialized with replies/keys, including short writes.
+ * Clipboard access and user intent are native policy, never PTY output effects.
+ * Additive private ABI v3 entry point; frame layouts/version are unchanged. */
+int32_t nb_session_paste(uint64_t session, NbBytes text);
 int32_t nb_session_key(uint64_t session, uint32_t key);
 int32_t nb_session_close(uint64_t session);
 int32_t nb_session_release(uint64_t session);

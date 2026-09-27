@@ -39,10 +39,40 @@ def protocol_probe():
     write("\x1b[0;48;5;17m\x1b[K\x1b[0m\x1b[24;1HSTYLE OK\x1b[?25l")
     assert os.read(0, 1) == b"v"
     write("\x1b[?25h")
+    expect(b"p")
+    write("\x1b[?2004h\x1b[8;1HPASTE READY")
+    expect("\x1b[200~界\ta\rb\rc\rd\x1b[201~".encode())
+    write("\x1b[?2004l\x1b[11;1H\x1b[2KIM OK\x1b[11;2H\x1b[4hR\x1b[4$p\x1b[4l\x1b[4$p")
+    expect(b"\x1b[4;1$y\x1b[4;2$y")
+    write("\x1b[8;1H\x1b[2KPASTE OK")
 
 
+def startup_probe():
+    # Put both screens, history and controls into non-default states first.
+    write("STALE\r\n" * 26)
+    write("\x1b[31;44m\x1b[3g\x1b[?1049h\x1b[2;4r\x1b[?1;6h\x1b[?7;25lALT\x1b7")
+    write("\x1b[!p\x1b[6n\x1b[?1$p\x1b[?6$p\x1b[?7$p\x1b[?25$p\x1b[?1049$p\x1b8\x1b[6n")
+    expect(b"\x1b[2;4R\x1b[?1;2$y\x1b[?6;2$y\x1b[?7;1$y\x1b[?25;1$y\x1b[?1049;1$y\x1b[1;1R")
+    write("\x1bc\x1b[?1049$p\t\x1b[6n\x1b[H")
+    expect(b"\x1b[?1049;2$y\x1b[1;9R")
+    # Do not draw the ready marker until the worker delivers every exact reply.
+    write("\x1b[c\x1b[>c\x1b[5n\x1b[6n\x1b[?7$p\x1b[?25$p\x1b[?2004$p")
+    expected = b"\x1b[?1;0c\x1b[>0;1;0c\x1b[0n\x1b[1;1R\x1b[?7;1$y\x1b[?25;1$y\x1b[?2004;2$y"
+    expect(expected)
+
+
+def expect(expected):
+    actual = b""
+    while len(actual) < len(expected):
+        part = os.read(0, len(expected) - len(actual))
+        assert part
+        actual += part
+    assert actual == expected, (actual, expected)
+
+
+startup_probe()
 write("stale display\x1b[2J\x1b[H")
-write("NEBULAX\r\n\r\nWelcome to your terminal.\r\n")
+write("NEBULAX\r\nSTARTUP OK / RESET OK\r\nWelcome to your terminal.\r\n")
 write("Unicode: cafe\u0301  界  👩‍💻\r\n")
 write("\x1b[1;36mBold cyan\x1b[0m  \x1b[3;38;5;214mItalic amber\x1b[0m  \x1b[4mUnderline\x1b[0m  \x1b[7mInverse\x1b[0m\r\n")
 write("Type a line and press Return. Arrow keys are recognized.\r\n")

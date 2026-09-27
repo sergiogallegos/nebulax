@@ -71,3 +71,38 @@ repeat {
 precondition(status.phase == NB_STOPPED)
 precondition(nb_session_release(closing) == NB_OK)
 print("Swift ABI: PTY replies, resize, retained frames and asynchronous close passed")
+
+// Synthetic explicit paste; this test never reads or writes the system clipboard.
+let pasteSession = start(CommandLine.arguments[1], [CommandLine.arguments[3]])
+let pasteDeadline = Date().addingTimeInterval(5)
+for stage in 0..<3 {
+    while true {
+        precondition(Date() < pasteDeadline)
+        var frame: UInt64 = 0
+        let result = nb_frame_acquire(pasteSession, 0, &frame)
+        precondition(result == NB_OK || result == NB_NO_FRAME)
+        if result == NB_OK {
+            let ready = String(decoding: text(view(frame)), as: UTF8.self) == "PASTE \(stage)"
+            precondition(nb_frame_release(frame) == NB_OK)
+            if ready { break }
+        }
+        Thread.sleep(forTimeInterval: 0.001)
+    }
+    for (value, expected) in [("\u{1b}[201~", Int32(NB_INVALID)), ("", Int32(NB_INVALID)), (String(repeating: "x", count: 4097), Int32(NB_LIMIT)), ("界\ta\r\nb\nc\rd", Int32(NB_OK))] {
+        let bytes = Array(value.utf8)
+        let result = bytes.withUnsafeBufferPointer { nb_session_paste(pasteSession, NbBytes(data: $0.baseAddress, len: $0.count)) }
+        precondition(result == expected)
+    }
+}
+repeat {
+    precondition(Date() < pasteDeadline)
+    precondition(nb_session_status(pasteSession, &status) == NB_OK)
+    if status.finished == 0 { Thread.sleep(forTimeInterval: 0.001) }
+} while status.finished == 0
+precondition(status.phase == NB_EXITED && status.exit_code == 0)
+var pasteFrame: UInt64 = 0
+precondition(nb_frame_acquire(pasteSession, 0, &pasteFrame) == NB_OK)
+precondition(String(decoding: text(view(pasteFrame)), as: UTF8.self) == "PASTE OK")
+precondition(nb_frame_release(pasteFrame) == NB_OK)
+precondition(nb_session_release(pasteSession) == NB_OK)
+print("Swift ABI: explicit paste validation, framing and resets passed")
