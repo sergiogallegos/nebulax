@@ -1,0 +1,125 @@
+[
+  {
+    "command": [
+      "cargo",
+      "build",
+      "-p",
+      "nebulax-native-bridge",
+      "--locked"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": "    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s\n"
+  },
+  {
+    "command": [
+      "cargo",
+      "metadata",
+      "--no-deps",
+      "--locked",
+      "--format-version=1"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"packages\":[{\"name\":\"nebulax-terminal\",\"version\":\"0.1.0\",\"id\":\"path+file:///Users/sergiogallegos/projects/nebulax/crates/terminal#nebulax-terminal@0.1.0\",\"license\":\"MIT AND Unicode-3.0\",\"license_file\":null,\"description\":\"Owned, bounded terminal-state research slice\",\"source\":null,\"dependencies\":[],\"targets\":[{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"nebulax_terminal\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/src/lib.rs\",\"edition\":\"2024\",\"doc\":true,\"doctest\":true,\"test\":true},{\"kind\":[\"example\"],\"crate_types\":[\"bin\"],\"name\":\"storage_probe\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/examples/storage_probe.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":false},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"cursor_and_regions\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/cursor_and_regions.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"device_replies\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/device_replies.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"history_and_resize\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/history_and_resize.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"insert_mode\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/insert_mode.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"insertion_deletion\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/insertion_deletion.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"parser_and_output\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/parser_and_output.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"paste\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/paste.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"resets\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/resets.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"snapshot\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/snapshot.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"storage\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/storage.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"stream_and_edit\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/stream_and_edit.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"styles\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/styles.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"tabs_and_erasure\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/tabs_and_erasure.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"wrap_and_visibility\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/tests/wrap_and_visibility.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true}],\"features\":{},\"manifest_path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal/Cargo.toml\",\"metadata\":null,\"publish\":[],\"authors\":[],\"categories\":[],\"keywords\":[],\"readme\":\"README.md\",\"repository\":\"https://github.com/sergiogallegos/nebulax\",\"homepage\":null,\"documentation\":null,\"edition\":\"2024\",\"links\":null,\"default_run\":null,\"rust_version\":\"1.98.1\"},{\"name\":\"nebulax-replay\",\"version\":\"0.1.0\",\"id\":\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/terminal-replay#nebulax-replay@0.1.0\",\"license\":\"MIT\",\"license_file\":null,\"description\":\"Headless terminal-engine acceptance experiment; not the Nebulax app\",\"source\":null,\"dependencies\":[{\"name\":\"alacritty_terminal\",\"source\":\"registry+https://github.com/rust-lang/crates.io-index\",\"req\":\"=0.26.0\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":null,\"registry\":null},{\"name\":\"serde\",\"source\":\"registry+https://github.com/rust-lang/crates.io-index\",\"req\":\"=1.0.229\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[\"derive\"],\"target\":null,\"registry\":null},{\"name\":\"serde_json\",\"source\":\"registry+https://github.com/rust-lang/crates.io-index\",\"req\":\"=1.0.151\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":null,\"registry\":null},{\"name\":\"sha2\",\"source\":\"registry+https://github.com/rust-lang/crates.io-index\",\"req\":\"=0.11.0\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":null,\"registry\":null}],\"targets\":[{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"nebulax_replay\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/terminal-replay/src/lib.rs\",\"edition\":\"2024\",\"doc\":true,\"doctest\":true,\"test\":true},{\"kind\":[\"bin\"],\"crate_types\":[\"bin\"],\"name\":\"nebulax-replay\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/terminal-replay/src/main.rs\",\"edition\":\"2024\",\"doc\":true,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"cli\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/terminal-replay/tests/cli.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true}],\"features\":{},\"manifest_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/terminal-replay/Cargo.toml\",\"metadata\":null,\"publish\":[],\"authors\":[],\"categories\":[],\"keywords\":[],\"readme\":\"README.md\",\"repository\":\"https://github.com/sergiogallegos/nebulax\",\"homepage\":null,\"documentation\":null,\"edition\":\"2024\",\"links\":null,\"default_run\":null,\"rust_version\":\"1.98.1\"},{\"name\":\"nebulax-owned-replay\",\"version\":\"0.1.0\",\"id\":\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/owned-replay#nebulax-owned-replay@0.1.0\",\"license\":\"MIT\",\"license_file\":null,\"description\":null,\"source\":null,\"dependencies\":[{\"name\":\"nebulax-terminal\",\"source\":null,\"req\":\"*\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":null,\"registry\":null,\"path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal\"},{\"name\":\"serde_json\",\"source\":\"registry+https://github.com/rust-lang/crates.io-index\",\"req\":\"=1.0.151\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":null,\"registry\":null},{\"name\":\"sha2\",\"source\":\"registry+https://github.com/rust-lang/crates.io-index\",\"req\":\"=0.11.0\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":null,\"registry\":null}],\"targets\":[{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"nebulax_owned_replay\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/owned-replay/src/lib.rs\",\"edition\":\"2024\",\"doc\":true,\"doctest\":true,\"test\":true},{\"kind\":[\"bin\"],\"crate_types\":[\"bin\"],\"name\":\"nebulax-owned-replay\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/owned-replay/src/main.rs\",\"edition\":\"2024\",\"doc\":true,\"doctest\":false,\"test\":true}],\"features\":{},\"manifest_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/owned-replay/Cargo.toml\",\"metadata\":null,\"publish\":[],\"authors\":[],\"categories\":[],\"keywords\":[],\"readme\":\"README.md\",\"repository\":\"https://github.com/sergiogallegos/nebulax\",\"homepage\":null,\"documentation\":null,\"edition\":\"2024\",\"links\":null,\"default_run\":null,\"rust_version\":\"1.98.1\"},{\"name\":\"nebulax-storage-spike\",\"version\":\"0.1.0\",\"id\":\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/storage-spike#nebulax-storage-spike@0.1.0\",\"license\":\"MIT\",\"license_file\":null,\"description\":null,\"source\":null,\"dependencies\":[{\"name\":\"nebulax-terminal\",\"source\":null,\"req\":\"*\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":null,\"registry\":null,\"path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal\"},{\"name\":\"serde_json\",\"source\":\"registry+https://github.com/rust-lang/crates.io-index\",\"req\":\"=1.0.151\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":null,\"registry\":null}],\"targets\":[{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"nebulax_storage_spike\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/storage-spike/src/lib.rs\",\"edition\":\"2024\",\"doc\":true,\"doctest\":true,\"test\":true},{\"kind\":[\"bin\"],\"crate_types\":[\"bin\"],\"name\":\"nebulax-storage-spike\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/storage-spike/src/main.rs\",\"edition\":\"2024\",\"doc\":true,\"doctest\":false,\"test\":true}],\"features\":{},\"manifest_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/storage-spike/Cargo.toml\",\"metadata\":null,\"publish\":[],\"authors\":[],\"categories\":[],\"keywords\":[],\"readme\":\"README.md\",\"repository\":null,\"homepage\":null,\"documentation\":null,\"edition\":\"2024\",\"links\":null,\"default_run\":null,\"rust_version\":\"1.98.1\"},{\"name\":\"nebulax-pty-session\",\"version\":\"0.1.0\",\"id\":\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/pty-session#nebulax-pty-session@0.1.0\",\"license\":\"MIT\",\"license_file\":null,\"description\":\"Bounded PTY lifecycle research with the owned terminal engine\",\"source\":null,\"dependencies\":[{\"name\":\"nebulax-terminal\",\"source\":null,\"req\":\"*\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":null,\"registry\":null,\"path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal\"}],\"targets\":[{\"kind\":[\"lib\"],\"crate_types\":[\"lib\"],\"name\":\"nebulax_pty_session\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/pty-session/src/lib.rs\",\"edition\":\"2024\",\"doc\":true,\"doctest\":true,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"lifecycle\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/pty-session/tests/lifecycle.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"pump\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/pty-session/tests/pump.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"shell\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/pty-session/tests/shell.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true},{\"kind\":[\"test\"],\"crate_types\":[\"bin\"],\"name\":\"worker\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/pty-session/tests/worker.rs\",\"edition\":\"2024\",\"doc\":false,\"doctest\":false,\"test\":true}],\"features\":{},\"manifest_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/pty-session/Cargo.toml\",\"metadata\":null,\"publish\":[],\"authors\":[],\"categories\":[],\"keywords\":[],\"readme\":\"README.md\",\"repository\":\"https://github.com/sergiogallegos/nebulax\",\"homepage\":null,\"documentation\":null,\"edition\":\"2024\",\"links\":null,\"default_run\":null,\"rust_version\":\"1.98.1\"},{\"name\":\"nebulax-native-bridge\",\"version\":\"0.1.0\",\"id\":\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/native-bridge#nebulax-native-bridge@0.1.0\",\"license\":\"MIT\",\"license_file\":null,\"description\":\"Private C snapshot and worker-lifetime experiment\",\"source\":null,\"dependencies\":[{\"name\":\"nebulax-pty-session\",\"source\":null,\"req\":\"*\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":\"cfg(target_os = \\\"macos\\\")\",\"registry\":null,\"path\":\"/Users/sergiogallegos/projects/nebulax/experiments/pty-session\"},{\"name\":\"nebulax-terminal\",\"source\":null,\"req\":\"*\",\"kind\":null,\"rename\":null,\"optional\":false,\"uses_default_features\":true,\"features\":[],\"target\":\"cfg(target_os = \\\"macos\\\")\",\"registry\":null,\"path\":\"/Users/sergiogallegos/projects/nebulax/crates/terminal\"}],\"targets\":[{\"kind\":[\"rlib\",\"cdylib\"],\"crate_types\":[\"rlib\",\"cdylib\"],\"name\":\"nebulax_native_bridge\",\"src_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/native-bridge/src/lib.rs\",\"edition\":\"2024\",\"doc\":true,\"doctest\":true,\"test\":true}],\"features\":{},\"manifest_path\":\"/Users/sergiogallegos/projects/nebulax/experiments/native-bridge/Cargo.toml\",\"metadata\":null,\"publish\":[],\"authors\":[],\"categories\":[],\"keywords\":[],\"readme\":\"README.md\",\"repository\":\"https://github.com/sergiogallegos/nebulax\",\"homepage\":null,\"documentation\":null,\"edition\":\"2024\",\"links\":null,\"default_run\":null,\"rust_version\":\"1.98.1\"}],\"workspace_members\":[\"path+file:///Users/sergiogallegos/projects/nebulax/crates/terminal#nebulax-terminal@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/terminal-replay#nebulax-replay@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/owned-replay#nebulax-owned-replay@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/storage-spike#nebulax-storage-spike@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/pty-session#nebulax-pty-session@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/native-bridge#nebulax-native-bridge@0.1.0\"],\"workspace_default_members\":[\"path+file:///Users/sergiogallegos/projects/nebulax/crates/terminal#nebulax-terminal@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/terminal-replay#nebulax-replay@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/owned-replay#nebulax-owned-replay@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/storage-spike#nebulax-storage-spike@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/pty-session#nebulax-pty-session@0.1.0\",\"path+file:///Users/sergiogallegos/projects/nebulax/experiments/native-bridge#nebulax-native-bridge@0.1.0\"],\"resolve\":null,\"target_directory\":\"/Users/sergiogallegos/projects/nebulax/target\",\"build_directory\":\"/Users/sergiogallegos/projects/nebulax/target\",\"version\":1,\"workspace_root\":\"/Users/sergiogallegos/projects/nebulax\",\"metadata\":null}\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "xcrun",
+      "swiftc",
+      "-swift-version",
+      "6",
+      "-warnings-as-errors",
+      "-module-cache-path",
+      "/Users/sergiogallegos/projects/nebulax/target/text-shaping/build/module-cache",
+      "-import-objc-header",
+      "/Users/sergiogallegos/projects/nebulax/experiments/native-bridge/include/nebulax.h",
+      "/Users/sergiogallegos/projects/nebulax/experiments/text-shaping/TextPlan.swift",
+      "/Users/sergiogallegos/projects/nebulax/experiments/text-shaping/Shaper.swift",
+      "/Users/sergiogallegos/projects/nebulax/experiments/text-shaping/tests/main.swift",
+      "-L",
+      "/Users/sergiogallegos/projects/nebulax/target/debug",
+      "-lnebulax_native_bridge",
+      "-Xlinker",
+      "-rpath",
+      "-Xlinker",
+      "/Users/sergiogallegos/projects/nebulax/target/debug",
+      "-o",
+      "/Users/sergiogallegos/projects/nebulax/target/text-shaping/build/TextShapingProbe"
+    ],
+    "exit_code": 0,
+    "stdout": "",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "/Users/sergiogallegos/projects/nebulax/target/text-shaping/build/TextShapingProbe",
+      "/opt/homebrew/opt/python@3.15/bin/python3.15",
+      "/Users/sergiogallegos/projects/nebulax/experiments/text-shaping/tests/peer.py",
+      "/Users/sergiogallegos/projects/nebulax/benchmarks/results/p0-22-core-text-mapping",
+      "JetBrainsMono-Regular",
+      "/Users/sergiogallegos/Library/Fonts/JetBrainsMono-Regular.ttf"
+    ],
+    "exit_code": 0,
+    "stdout": "Core Text: 15 immutable runs; typographic ligatures, Unicode/fallback, limits and lifetime checks passed\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "rev-parse",
+      "HEAD"
+    ],
+    "exit_code": 0,
+    "stdout": "96aa046b8d7ebc2565dbefcf40432c7675725df5\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "git",
+      "status",
+      "--porcelain"
+    ],
+    "exit_code": 0,
+    "stdout": " M HANDOFF.md\n M docs/architecture/REPOSITORY_MAP.md\n M docs/architecture/STATUS.md\n M docs/development/BUILD.md\n M plans/BACKLOG.md\n M plans/NOW.md\n M plans/ROADMAP.md\n M scripts/verify\n?? benchmarks/results/p0-22-core-text-mapping/\n?? docs/adr/0023-immutable-text-runs-and-core-text-mapping.md\n?? docs/architecture/PERSISTENT_SESSIONS.md\n?? experiments/text-shaping/\n?? research/2026-10-17-core-text-mapping.md\n?? scripts/text-shaping\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "xcrun",
+      "swiftc",
+      "--version"
+    ],
+    "exit_code": 0,
+    "stdout": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0\n",
+    "stderr": "swift-driver version: 1.168.6 "
+  },
+  {
+    "command": [
+      "sw_vers"
+    ],
+    "exit_code": 0,
+    "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "xcodebuild",
+      "-version"
+    ],
+    "exit_code": 0,
+    "stdout": "Xcode 27.0\nBuild version 27A266a\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "xcrun",
+      "--sdk",
+      "macosx",
+      "--show-sdk-version"
+    ],
+    "exit_code": 0,
+    "stdout": "27.0\n",
+    "stderr": ""
+  }
+]

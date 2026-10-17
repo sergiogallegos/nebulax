@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Run the bounded headless Core Text mapping experiment on immutable Rust frames."""
+import argparse
+from datetime import datetime, timezone
+import hashlib
+import json
+from pathlib import Path
+import runpy
+import subprocess
+import sys
+
+ROOT = Path(__file__).resolve().parent.parent
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--output", type=Path, help="New evidence directory; default is under ignored target/")
+    parser.add_argument("--programming-font", help="Exact installed PostScript name; requires changed operator glyph output")
+    parser.add_argument("--programming-font-file", type=Path, help="Optional existing font file registered in the probe process only")
+    args = parser.parse_args()
+    if args.programming_font_file and not args.programming_font:
+        parser.error("--programming-font-file requires --programming-font")
+    if sys.platform != "darwin":
+        if args.output or args.programming_font:
+            parser.error("Core Text evidence requires macOS")
+        print("Core Text shaping requires macOS; portable engine checks run separately.")
+        return
+    started = datetime.now(timezone.utc)
+    output = (args.output or ROOT / "target/text-shaping" / started.strftime("%Y%m%dT%H%M%S.%fZ")).resolve()
+    output.mkdir(parents=True, exist_ok=False)
+    shared = runpy.run_path(str(ROOT / "scripts/replay"))
+    sources = shared["source_manifest"]()
+    commands = []
+
+    def run(command):
+        result = subprocess.run(command, cwd=ROOT, capture_output=True, text=True, timeout=120)
+        commands.append({"command": command, "exit_code": result.returncode, "stdout": result.stdout, "stderr": result.stderr})
+        (output / "commands.json").write_text(json.dumps(commands, indent=2) + "\n")
+        if result.returncode:
+            print(result.stdout + result.stderr, file=sys.stderr)
+            result.check_returncode()
+        return result.stdout.strip()
+
+    run(["cargo", "build", "-p", "nebulax-native-bridge", "--locked"])
+    meta = json.loads(run(["cargo", "metadata", "--no-deps", "--locked", "--format-version=1"]))
+    library = Path(meta["target_directory"]) / "debug"
+    build = ROOT / "target/text-shaping/build"
+    build.mkdir(parents=True, exist_ok=True)
+    binary = build / "TextShapingProbe"
+    run(["xcrun", "swiftc", "-swift-version", "6", "-warnings-as-errors", "-module-cache-path", str(build / "module-cache"),
+         "-import-objc-header", str(ROOT / "experiments/native-bridge/include/nebulax.h"),
+         *[str(ROOT / "experiments/text-shaping" / name) for name in ("TextPlan.swift", "Shaper.swift", "tests/main.swift")],
+         "-L", str(library), "-lnebulax_native_bridge", "-Xlinker", "-rpath", "-Xlinker", str(library), "-o", str(binary)])
+    command = [str(binary), sys.executable, str(ROOT / "experiments/text-shaping/tests/peer.py"), str(output)]
+    if args.programming_font:
+        command.append(args.programming_font)
+    if args.programming_font_file:
+        command.append(str(args.programming_font_file.resolve(strict=True)))
+    print(run(command))
+    stable = sources == shared["source_manifest"]()
+    shared["write_json"](output / "sources.json", sources)
+    shared["write_json"](output / "environment.json", {
+        "started_utc": started.isoformat(), "finished_utc": datetime.now(timezone.utc).isoformat(),
+        "git_commit": run(["git", "rev-parse", "HEAD"]), "git_dirty": bool(run(["git", "status", "--porcelain"])),
+        "swift": run(["xcrun", "swiftc", "--version"]), "macos": run(["sw_vers"]),
+        "xcode": run(["xcodebuild", "-version"]), "sdk": run(["xcrun", "--sdk", "macosx", "--show-sdk-version"]),
+        "python": sys.version.split()[0], "sources_unchanged_during_run": stable,
+        "binary_sha256": hashlib.sha256(binary.read_bytes()).hexdigest(),
+        "bridge_sha256": hashlib.sha256((library / "libnebulax_native_bridge.dylib").read_bytes()).hexdigest(),
+        "kind": "native_shaping_correctness_not_performance", "window_server_required": False,
+    })
+    shared["write_json"](output / "artifacts.json", {
+        path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in sorted(output.iterdir()) if path.is_file()
+    })
+    if not stable:
+        raise RuntimeError("sources changed during shaping run")
+    print(f"Core Text evidence: {output}")
+
+
+if __name__ == "__main__":
+    main()

@@ -12,4 +12,6 @@
 | 4/5 | Linux, then Windows | Deferred |
 | 6+ | Splits, graphics and optional process-preserving daemon | Separate future scope |
 
+The owner also proposed [persistent sessions, remote/web/iOS clients and collaboration](../docs/architecture/PERSISTENT_SESSIONS.md). This is recorded future planning with staged feasibility gates; no service, hosting model or change to daemon-free v1 is selected.
+
 See [NOW](NOW.md) for the active slice and [Phase 0 methodology](../review/PHASE_0_PLAN.md) for experiment controls. No calendar estimate is justified by the current evidence.

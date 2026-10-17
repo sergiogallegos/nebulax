@@ -12,7 +12,7 @@ The project-level design review is accepted. We are now in **Phase 0A: validatin
 | Terminal state | Implemented Rust graphemes, bounded history, alternate screen, resize/reflow, cursor/region state bounded SGR styles, tabs, display erasure, insertion/deletion, autowrap/visibility/insert modes and soft/hard reset; broader protocol/compatibility work remains |
 | Parser/output | Bounded generic syntax, separate semantics and ordered typed replies/effects plus minimal device/version identification and state-derived mode reports implemented with tested PTY startup transport; broader VT behavior remains open |
 | Storage/snapshots | 16-byte directly owned cells, tail reclamation and bounded snapshots implemented; shared/chunked storage and performance tuning remain open |
-| Rendering/fonts | Direct Metal + Core Text on macOS; ligatures required. Linux GTK4/OpenGL candidate, Windows direct backend API open. Preview uses Core Text drawing; production GPU/text implementation remains pending |
+| Rendering/fonts | Direct Metal + Core Text on macOS; ligatures required. Immutable run/mapping experiment verifies ligatures/fallback after snapshot teardown; grid fitting and production GPU implementation remain pending. Linux GTK4/OpenGL candidate, Windows direct backend API open |
 | Runtime/scheduling | Worker-owned PTY, bounded transport and asynchronous close verified; production scheduling/job trees remain open |
 | Native integration | Private C/Swift lifetimes and minimal AppKit/basic-input and bounded explicit paste paths verified; IME/accessibility and deployment floor remain open |
 | Product readiness | Local interactive preview; no installation, release or production performance claim |
@@ -57,4 +57,6 @@ The [foundation review](FOUNDATION_REVIEW.md) records the assessment of the owne
 
 [ADR 0021](../adr/0021-bounded-bracketed-paste.md) records global paste-mode/query/reset semantics, bounded native admission, control rejection, newline normalization and serialized PTY framing, with C/Swift/AppKit evidence. System clipboard/menu integration remains separate.
 
-[ADR 0022](../adr/0022-ansi-insert-mode.md) records ANSI insert-mode ownership, streaming width adjustments and shared column movement, with real PTY and native preview validation. The next bounded experiment addresses immutable text runs and Core Text shaping/cell mapping before Metal integration.
+[ADR 0022](../adr/0022-ansi-insert-mode.md) records ANSI insert-mode ownership, streaming width adjustments and shared column movement, with real PTY and native preview validation.
+
+[ADR 0023](../adr/0023-immutable-text-runs-and-core-text-mapping.md) records the implemented immutable text-run/Core Text mapping experiment and its limits. The next native gate is terminal grid fitting and contextual draw-group handling before Metal integration. [Persistent/remote/shared sessions](PERSISTENT_SESSIONS.md) are a newly recorded future proposal; the accepted daemon-free v1 remains unchanged.

@@ -1,0 +1,16 @@
+{
+  "started_utc": "2026-10-17T16:49:58.166084+00:00",
+  "finished_utc": "2026-10-17T16:50:00.128750+00:00",
+  "git_commit": "96aa046b8d7ebc2565dbefcf40432c7675725df5",
+  "git_dirty": true,
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx27.0.0",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+  "xcode": "Xcode 27.0\nBuild version 27A266a",
+  "sdk": "27.0",
+  "python": "3.15.0",
+  "sources_unchanged_during_run": true,
+  "binary_sha256": "00ab3eb7672aff6fb69df202f7829633c4585094a05459f427d020eb9ada77b5",
+  "bridge_sha256": "7e6adc7c230a620b362614a1fc7c6dae9d71059926cf62989bd3bdd8aa06ef03",
+  "kind": "native_shaping_correctness_not_performance",
+  "window_server_required": false
+}

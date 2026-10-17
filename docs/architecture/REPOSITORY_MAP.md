@@ -7,6 +7,8 @@
 | Change history, screens or reflow | `crates/terminal/src/screen.rs`, `docs/adr/0003-history-screen-and-reflow.md` | History/resize integration tests and owned replay |
 | Change architectural direction | `docs/adr/` | Owner decision; update affected docs |
 | Design public embedding/native backends | ADR 0017; existing headless crate, private native bridge and AppKit preview | Separate public API/lifetime and Metal/ligature acceptance; no released SDK yet |
+| Shape immutable native text runs | `experiments/text-shaping/`, ADR 0023 | `scripts/text-shaping`; copied UTF-8/UTF-16 owners, ligatures/fallback, bounds/lifetimes and offscreen clipping; grid fitting pending |
+| Plan durable/remote/shared sessions | `docs/architecture/PERSISTENT_SESSIONS.md` | Future proposal; daemon-free v1 unchanged; select one bounded attach/detach experiment when its phase starts |
 | Replay terminal bytes and compare delivery | `experiments/terminal-replay/src/lib.rs` | `cargo test --workspace --locked` |
 | Compare Ghostty as a research reference | `experiments/ghostty-reference/` | Pinned build, strict replay, explicit mode control |
 | Change owned Rust engine | `crates/terminal/` | Unicode conformance, stream/edit invariants, owned replay |

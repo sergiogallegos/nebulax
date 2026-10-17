@@ -1,0 +1,63 @@
+{
+  "checks" : 1035,
+  "clip_changed_inside_pixels" : 123,
+  "clip_changed_outside_pixels" : 0,
+  "input_leases_live_during_shaping" : 0,
+  "kind" : "core_text_mapping_correctness_not_performance",
+  "limits" : [
+    "Logical payload counts exclude Swift allocator, Core Text\/font caches and RSS",
+    "One native line is shaped at a time; no retained CTLine or glyph cache",
+    "LTR monotonic mapping only; bidi\/nonmonotonic\/matrix runs rejected",
+    "Natural positions are diagnostic; terminal grid fitting and Metal are pending"
+  ],
+  "maximum_shaped_run_payload_bytes" : 6328,
+  "missing_glyphs" : 0,
+  "plan_payload_bytes" : 8350,
+  "programming_ligatures" : {
+    "font" : "JetBrainsMono-Regular",
+    "off_glyphs" : 18,
+    "on_glyphs" : 18,
+    "status" : "passed"
+  },
+  "repeat_shape_cycles" : 64,
+  "resolved_fonts" : [
+    {
+      "file" : "Apple Color Emoji.ttc",
+      "file_sha256" : "12bc8221a908c5bcf05f0fce940d3c3f6e9d09d8d806ffe31a969b4ac9be8f9e",
+      "postscript_name" : "AppleColorEmoji",
+      "version" : "22.0d3e2"
+    },
+    {
+      "file" : "JetBrainsMono-Regular.ttf",
+      "file_sha256" : "a0bf60ef0f83c5ed4d7a75d45838548b1f6873372dfac88f71804491898d138f",
+      "postscript_name" : "JetBrainsMono-Regular",
+      "version" : "Version 2.304; ttfautohint (v1.8.4.7-5d5b)"
+    },
+    {
+      "file" : "Menlo.ttc",
+      "file_sha256" : "f2d400484a6aace67980730ec0a9ef24ce9e535a2604f118e6fdc2510021b85f",
+      "postscript_name" : "Menlo-Regular",
+      "version" : "22.0d2e1"
+    },
+    {
+      "file" : "PingFangUI.ttc",
+      "file_sha256" : "39d42acd292ed5c9de5cf185b54a3c460630d610a718ed84c9e4f148e226f890",
+      "postscript_name" : "PingFangSC-Regular",
+      "version" : "22.0d5e2"
+    },
+    {
+      "file" : "Times.ttc",
+      "file_sha256" : "79d8f1b02824796dda7234574826455c6cc62e898b2728c834859baad3332727",
+      "postscript_name" : "Times-Roman",
+      "version" : "22.0d2e1"
+    }
+  ],
+  "runs" : 15,
+  "schema_version" : 1,
+  "success" : true,
+  "typographic_ligatures" : {
+    "off_glyphs" : 16,
+    "on_glyphs" : 12
+  },
+  "unsupported_order_rejections" : 2
+}
